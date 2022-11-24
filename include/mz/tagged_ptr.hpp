@@ -434,11 +434,6 @@
 #include <memory> // std::pointer_traits
 #endif
 
-#if MZ_CLANG
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wignored-attributes" // false-positive
-#endif
-
 namespace mz
 {
 	using std::size_t;
@@ -499,6 +494,25 @@ namespace mz
 
 	template <typename T>
 	inline constexpr bool is_unsigned = std::is_unsigned_v<remove_enum<remove_cvref<T>>>;
+
+#ifndef MZ_HAS_SNIPPET_UNWRAP
+#define MZ_HAS_SNIPPET_UNWRAP
+
+	MZ_CONSTRAINED_TEMPLATE(is_enum<T>, typename T)
+	MZ_CONST_INLINE_GETTER
+	constexpr std::underlying_type_t<T> unwrap(T val) noexcept
+	{
+		return static_cast<std::underlying_type_t<T>>(val);
+	}
+
+	MZ_CONSTRAINED_TEMPLATE(!is_enum<T>, typename T)
+	MZ_CONST_INLINE_GETTER
+	constexpr T&& unwrap(T&& val) noexcept
+	{
+		return static_cast<T&&>(val);
+	}
+
+#endif // MZ_HAS_SNIPPET_UNWRAP
 
 #ifndef MZ_HAS_SNIPPET_MAX
 #define MZ_HAS_SNIPPET_MAX
@@ -849,11 +863,10 @@ namespace mz::detail
 	template <size_t Bits>
 	using tptr_uint_for_bits = typename decltype(tptr_uint_for_bits_impl<Bits>())::type;
 
-	template <size_t MinAlign>
+	template <size_t Align>
 	struct tptr
 	{
-		static constexpr size_t tag_bits =
-			(mz::max<size_t>(bit_width(MinAlign), 1u) - 1u) + detail::tptr_addr_free_bits;
+		static constexpr size_t tag_bits = (mz::max<size_t>(bit_width(Align), 1u) - 1u) + detail::tptr_addr_free_bits;
 		static constexpr uintptr_t tag_mask = bit_fill_right<uintptr_t>(tag_bits);
 		static constexpr uintptr_t ptr_mask = ~tag_mask;
 
@@ -863,8 +876,8 @@ namespace mz::detail
 		MZ_CONST_GETTER
 		static constexpr uintptr_t pack_ptr(void* ptr) noexcept
 		{
-			MZ_CONSTEXPR_SAFE_ASSERT((!ptr || bit_floor(reinterpret_cast<uintptr_t>(ptr)) >= MinAlign)
-									 && "The pointer's address is more strictly aligned than MinAlign");
+			MZ_CONSTEXPR_SAFE_ASSERT((!ptr || bit_floor(reinterpret_cast<uintptr_t>(ptr)) >= Align)
+									 && "The pointer's address is more strictly aligned than Align");
 
 			if constexpr (tptr_addr_free_bits > 0)
 				return (reinterpret_cast<uintptr_t>(ptr) << tptr_addr_free_bits);
@@ -882,8 +895,8 @@ namespace mz::detail
 				return pack_both(ptr, unwrap(tag));
 			else
 			{
-				MZ_CONSTEXPR_SAFE_ASSERT((!ptr || bit_floor(reinterpret_cast<uintptr_t>(ptr)) >= MinAlign)
-										 && "The pointer's address is more strictly aligned than MinAlign");
+				MZ_CONSTEXPR_SAFE_ASSERT((!ptr || bit_floor(reinterpret_cast<uintptr_t>(ptr)) >= Align)
+										 && "The pointer's address is more strictly aligned than Align");
 
 				if constexpr (is_unsigned<T>)
 				{
@@ -1016,7 +1029,7 @@ namespace mz::detail
 		{}
 	};
 
-	template <typename T, size_t MinAlign, bool = std::is_function_v<T>>
+	template <typename T, size_t Align, bool = std::is_function_v<T>>
 	struct MZ_TRIVIAL_ABI tagged_ptr_to_function : protected tagged_ptr_storage
 	{
 	  protected:
@@ -1030,7 +1043,7 @@ namespace mz::detail
 		MZ_PURE_GETTER
 		constexpr pointer ptr() const noexcept
 		{
-			using tptr = detail::tptr<MinAlign>;
+			using tptr = detail::tptr<Align>;
 
 			return reinterpret_cast<pointer>(tptr::get_ptr(bits_));
 		}
@@ -1063,8 +1076,8 @@ namespace mz::detail
 		}
 	};
 
-	template <typename T, size_t MinAlign>
-	struct MZ_TRIVIAL_ABI tagged_ptr_to_function<T, MinAlign, false> : protected tagged_ptr_storage
+	template <typename T, size_t Align>
+	struct MZ_TRIVIAL_ABI tagged_ptr_to_function<T, Align, false> : protected tagged_ptr_storage
 	{
 	  protected:
 		using base = tagged_ptr_storage;
@@ -1072,44 +1085,42 @@ namespace mz::detail
 		using base::base;
 
 	  public:
-		using pointer = std::add_pointer_t<T>;
-
 		MZ_PURE_GETTER
-		MZ_ATTR(assume_aligned(MinAlign))
-		constexpr pointer ptr() const noexcept
+		MZ_ATTR(assume_aligned(Align))
+		constexpr T* ptr() const noexcept
 		{
-			using tptr = detail::tptr<MinAlign>;
+			using tptr = detail::tptr<Align>;
 
-			return mz::assume_aligned<MinAlign>(reinterpret_cast<pointer>(tptr::get_ptr(bits_)));
+			return mz::assume_aligned<Align>(reinterpret_cast<T*>(tptr::get_ptr(bits_)));
 		}
 
 		MZ_PURE_GETTER
-		MZ_ATTR(assume_aligned(MinAlign))
-		constexpr pointer get() const noexcept
+		MZ_ATTR(assume_aligned(Align))
+		constexpr T* get() const noexcept
 		{
 			return ptr();
 		}
 
 		MZ_PURE_GETTER
-		MZ_ATTR(assume_aligned(MinAlign))
-		explicit constexpr operator pointer() const noexcept
+		MZ_ATTR(assume_aligned(Align))
+		explicit constexpr operator T*() const noexcept
 		{
 			return ptr();
 		}
 
 	  protected:
 		MZ_CONST_INLINE_GETTER
-		static constexpr void* to_void_ptr(pointer ptr) noexcept
+		static constexpr void* to_void_ptr(T* ptr) noexcept
 		{
 			return const_cast<void*>(static_cast<const volatile void*>(ptr));
 		}
 	};
 
-	template <typename T, size_t MinAlign, bool = (!std::is_function_v<T> && !std::is_void_v<T>)>
-	struct MZ_TRIVIAL_ABI tagged_ptr_to_object : public tagged_ptr_to_function<T, MinAlign>
+	template <typename T, size_t Align, bool = (!std::is_function_v<T> && !std::is_void_v<T>)>
+	struct MZ_TRIVIAL_ABI tagged_ptr_to_object : public tagged_ptr_to_function<T, Align>
 	{
 	  protected:
-		using base = tagged_ptr_to_function<T, MinAlign>;
+		using base = tagged_ptr_to_function<T, Align>;
 		using base::bits_;
 
 		constexpr tagged_ptr_to_object(uintptr_t bits = {}) noexcept //
@@ -1132,11 +1143,11 @@ namespace mz::detail
 		}
 	};
 
-	template <typename T, size_t MinAlign>
-	struct MZ_TRIVIAL_ABI tagged_ptr_to_object<T, MinAlign, false> : public tagged_ptr_to_function<T, MinAlign>
+	template <typename T, size_t Align>
+	struct MZ_TRIVIAL_ABI tagged_ptr_to_object<T, Align, false> : public tagged_ptr_to_function<T, Align>
 	{
 	  protected:
-		using base = tagged_ptr_to_function<T, MinAlign>;
+		using base = tagged_ptr_to_function<T, Align>;
 		using base::bits_;
 
 		constexpr tagged_ptr_to_object(uintptr_t bits = {}) noexcept //
@@ -1151,9 +1162,9 @@ namespace mz::detail
 	{};
 
 	template <typename T, bool = (std::is_void_v<T> || std::is_function_v<T>)>
-	inline constexpr size_t tptr_alignof = alignof(T);
+	inline constexpr size_t tptr_min_align = alignof(T);
 	template <typename T>
-	inline constexpr size_t tptr_alignof<T, true> = 1;
+	inline constexpr size_t tptr_min_align<T, true> = 1;
 }
 
 #endif // MZ_HAS_SNIPPET_TAGGED_PTR_IMPL
@@ -1163,9 +1174,9 @@ namespace mz::detail
 
 namespace mz
 {
-	template <typename T, size_t MinAlign = detail::tptr_alignof<T>>
+	template <typename T, size_t Align = detail::tptr_min_align<T>>
 	class MZ_TRIVIAL_ABI tagged_ptr //
-		MZ_HIDDEN_BASE(public detail::tagged_ptr_to_object<T, MinAlign>)
+		MZ_HIDDEN_BASE(public detail::tagged_ptr_to_object<T, Align>)
 	{
 		static_assert(!std::is_same_v<T, detail::tptr_nullptr_deduced_tag>,
 					  "Tagged pointers cannot have their type deduced from a nullptr"
@@ -1173,18 +1184,17 @@ namespace mz
 
 		static_assert(!std::is_reference_v<T>, "Tagged pointers cannot store references");
 
-		static_assert(MinAlign > 0 && has_single_bit(MinAlign), "Minimum alignment must be a power of two");
+		static_assert(has_single_bit(Align), "Alignment must be a power of two");
 
-		static_assert(std::is_function_v<T> // the default is not strictly the minimum for function pointers
-						  || MinAlign >= detail::tptr_alignof<T>,
-					  "Minimum alignment cannot be smaller than the type's actual minimum alignment");
+		static_assert(Align >= detail::tptr_min_align<T>,
+					  "Alignment cannot be smaller than the type's actual alignment");
 
-		static_assert(MinAlign > 1 || detail::tptr_addr_free_bits > 0,
-					  "Types aligned on a single byte cannot be pointed to by a tagged pointer on the target platform");
+		static_assert(Align > 1 || detail::tptr_addr_free_bits > 0,
+					  "Types aligned on a single byte cannot be pointed to by a tagged pointer on this platform");
 
 	  private:
-		using tptr = detail::tptr<MinAlign>;
-		using base = detail::tagged_ptr_to_object<T, MinAlign>;
+		using tptr = detail::tptr<Align>;
+		using base = detail::tagged_ptr_to_object<T, Align>;
 		using base::bits_;
 
 	  public:
@@ -1196,7 +1206,7 @@ namespace mz
 
 		using tag_type = typename tptr::tag_type;
 
-		static constexpr size_t minimum_alignment = MinAlign;
+		static constexpr size_t alignment = Align;
 
 		static constexpr size_t tag_bit_count = tptr::tag_bits;
 
@@ -1402,14 +1412,14 @@ namespace mz::detail
 	struct tagged_pointer_traits
 	{};
 
-	template <template <typename, size_t> typename TaggedPointer, typename T, size_t MinAlign>
-	struct tagged_pointer_traits_base<TaggedPointer<T, MinAlign>>
+	template <template <typename, size_t> typename TaggedPointer, typename T, size_t Align>
+	struct tagged_pointer_traits_base<TaggedPointer<T, Align>>
 	{
-		using pointer		  = TaggedPointer<T, MinAlign>;
+		using pointer		  = TaggedPointer<T, Align>;
 		using element_type	  = T;
 		using difference_type = ptrdiff_t;
 		template <typename U>
-		using rebind = TaggedPointer<U, MinAlign>;
+		using rebind = TaggedPointer<U, Align>;
 
 		MZ_PURE_GETTER
 		constexpr static element_type* to_address(const pointer& p) noexcept
@@ -1418,16 +1428,14 @@ namespace mz::detail
 		}
 	};
 
-	template <template <typename, size_t> typename TaggedPointer, typename T, size_t MinAlign>
-	struct tagged_pointer_traits<TaggedPointer<T, MinAlign>, true>
-		: tagged_pointer_traits_base<TaggedPointer<T, MinAlign>>
+	template <template <typename, size_t> typename TaggedPointer, typename T, size_t Align>
+	struct tagged_pointer_traits<TaggedPointer<T, Align>, true> : tagged_pointer_traits_base<TaggedPointer<T, Align>>
 	{};
 
-	template <template <typename, size_t> typename TaggedPointer, typename T, size_t MinAlign>
-	struct tagged_pointer_traits<TaggedPointer<T, MinAlign>, false>
-		: tagged_pointer_traits_base<TaggedPointer<T, MinAlign>>
+	template <template <typename, size_t> typename TaggedPointer, typename T, size_t Align>
+	struct tagged_pointer_traits<TaggedPointer<T, Align>, false> : tagged_pointer_traits_base<TaggedPointer<T, Align>>
 	{
-		using pointer	   = TaggedPointer<T, MinAlign>;
+		using pointer	   = TaggedPointer<T, Align>;
 		using element_type = T;
 
 		MZ_PURE_GETTER
@@ -1440,18 +1448,14 @@ namespace mz::detail
 
 namespace std
 {
-	template <typename T, size_t MinAlign>
-	struct pointer_traits<mz::tagged_ptr<T, MinAlign>>
-		: mz::detail::tagged_pointer_traits<mz::tagged_ptr<T, MinAlign>, std::is_void_v<T>>
+	template <typename T, size_t Align>
+	struct pointer_traits<mz::tagged_ptr<T, Align>>
+		: mz::detail::tagged_pointer_traits<mz::tagged_ptr<T, Align>, std::is_void_v<T>>
 	{};
 }
 
 #endif // MZ_HAS_SNIPPET_TAGGED_PTR_TRAITS
 
-#endif
-
-#if MZ_CLANG
-#pragma clang diagnostic pop
 #endif
 
 #endif // MZ_TAGGED_PTR_HPP

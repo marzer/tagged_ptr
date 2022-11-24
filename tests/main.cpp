@@ -47,7 +47,7 @@ struct tagged_ptr_static_checks final
 	static_assert(std::is_same_v<typename tptr::element_type, T>);
 	static_assert(std::is_same_v<typename tptr::pointer, T*>);
 	static_assert(std::is_same_v<typename tptr::const_pointer, const T*>);
-	static_assert(tptr::minimum_alignment == min_align);
+	static_assert(tptr::alignment == min_align);
 	static_assert(tptr::tag_bit_count >= bit_width(min_align - 1u));
 
 	// tag size
@@ -198,6 +198,41 @@ TEST_CASE("tagged_ptr - integral tags")
 	}
 }
 
+TEST_CASE("tagged_ptr - enum tags")
+{
+	using tp = tagged_ptr<void, 16>; // 4 free bits
+	static_assert(sizeof(tp) == sizeof(void*));
+
+	enum class an_enum : unsigned
+	{
+		zero   = 0,
+		first  = 0b1100u,
+		second = 0b1111u,
+		big	   = 0b11111111u,
+	};
+
+	auto ptr = reinterpret_cast<void*>(uintptr_t{ 0x12345670u });
+	tp val{ ptr, an_enum::first };
+	CHECK(val.ptr() == ptr);
+	CHECK(val == ptr);
+	CHECK(val.tag<an_enum>() == an_enum::first);
+
+	val.tag(an_enum::second);
+	CHECK(val.tag<an_enum>() == an_enum::second);
+	val.tag(an_enum::zero);
+	CHECK(val.tag<an_enum>() == an_enum::zero);
+	val.tag(an_enum::big);
+	if constexpr (detail::tptr_addr_free_bits >= 4)
+	{
+		CHECK(val.tag<an_enum>() == an_enum::big);
+	}
+	else if constexpr (!detail::tptr_addr_free_bits)
+	{
+		CHECK(val.tag<an_enum>() != an_enum::big);
+		CHECK(val.tag<an_enum>() == an_enum::second);
+	}
+}
+
 TEST_CASE("tagged_ptr - pod tags")
 {
 	struct data
@@ -206,10 +241,9 @@ TEST_CASE("tagged_ptr - pod tags")
 	};
 	static_assert(sizeof(data) == 1);
 
-	using align256 = aligned<(1 << CHAR_BIT)>;
-	static_assert(alignof(align256) == (1 << CHAR_BIT));
+	using align_big = aligned<(1u << (CHAR_BIT * sizeof(data)))>;
 
-	tagged_ptr<align256> ptr;
+	tagged_ptr<align_big> ptr;
 	static_assert(sizeof(ptr) == sizeof(void*));
 	static_assert(decltype(ptr)::tag_bit_count >= sizeof(data) * CHAR_BIT);
 
@@ -221,12 +255,12 @@ TEST_CASE("tagged_ptr - pod tags")
 	CHECK(ptr.tag() != 0u);
 	CHECK(ptr.tag<data>().val == 'k');
 
-	std::unique_ptr<align256> aligned{ new align256 };
+	std::unique_ptr<align_big> aligned{ new align_big };
 	ptr = aligned.get();
 	CHECK(ptr.ptr() == aligned.get());
 	CHECK(ptr.tag<data>().val == 'k');
 
-	ptr = tagged_ptr<align256>{};
+	ptr = tagged_ptr<align_big>{};
 	CHECK(ptr.ptr() == nullptr);
 	CHECK(ptr.tag() == 0u);
 
@@ -235,56 +269,9 @@ TEST_CASE("tagged_ptr - pod tags")
 	CHECK(ptr.tag<data>().val == 'k');
 }
 
-#if MZ_ARCH_AMD64
-
-TEST_CASE("tagged_ptr - pod tags (large)")
-{
-	struct data
-	{
-		char val[3];
-	};
-	static_assert(sizeof(data) == 3);
-
-	using aligned8192 = aligned<(1 << (CHAR_BIT * 3))>;
-	static_assert(alignof(aligned8192) == (1 << (CHAR_BIT * 3)));
-
-	tagged_ptr<aligned8192> ptr;
-	static_assert(sizeof(ptr) == sizeof(void*));
-	static_assert(decltype(ptr)::tag_bit_count >= sizeof(data) * CHAR_BIT);
-
-	CHECK(ptr.ptr() == nullptr);
-	CHECK(ptr == nullptr);
-	CHECK(ptr.tag() == 0u);
-	ptr.tag(data{ { 'a', 'k', 'z' } });
-	CHECK(ptr.ptr() == nullptr);
-	CHECK(ptr.tag() != 0u);
-	CHECK(ptr.tag<data>().val[0] == 'a');
-	CHECK(ptr.tag<data>().val[1] == 'k');
-	CHECK(ptr.tag<data>().val[2] == 'z');
-
-	std::unique_ptr<aligned8192> aligned{ new aligned8192 };
-	ptr = aligned.get();
-	CHECK(ptr.ptr() == aligned.get());
-	CHECK(ptr.tag<data>().val[0] == 'a');
-	CHECK(ptr.tag<data>().val[1] == 'k');
-	CHECK(ptr.tag<data>().val[2] == 'z');
-
-	ptr = tagged_ptr<aligned8192>{};
-	CHECK(ptr.ptr() == nullptr);
-	CHECK(ptr.tag() == 0u);
-
-	ptr = { aligned.get(), data{ { 'a', 'k', 'z' } } };
-	CHECK(ptr.ptr() == aligned.get());
-	CHECK(ptr.tag<data>().val[0] == 'a');
-	CHECK(ptr.tag<data>().val[1] == 'k');
-	CHECK(ptr.tag<data>().val[2] == 'z');
-}
-
-#endif
-
 TEST_CASE("tagged_ptr - alignments")
 {
-	using align32 = aligned<32>;
+	using align32 = aligned<32>; // 5 free bits
 
 	tagged_ptr<align32> ptr;
 	static_assert(sizeof(ptr) == sizeof(void*));
@@ -301,8 +288,7 @@ TEST_CASE("tagged_ptr - alignments")
 	CHECK(ptr.tag() == expectedTag);
 
 	auto unaligned = apply_offset(aligned.get(), 1);
-	CHECK(reinterpret_cast<const volatile std::byte*>(aligned.get())
-		  != reinterpret_cast<const volatile std::byte*>(unaligned) + 1);
+	CHECK(reinterpret_cast<std::byte*>(aligned.get()) != reinterpret_cast<std::byte*>(unaligned) + 1);
 	ptr = unaligned; // low bit of the pointer should get masked off
 	CHECK(ptr.ptr() != unaligned);
 	CHECK(ptr.ptr() == aligned.get());

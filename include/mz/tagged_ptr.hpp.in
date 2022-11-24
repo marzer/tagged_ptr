@@ -51,11 +51,6 @@
 #include <memory> // std::pointer_traits
 #endif
 
-#if {% macros::prefix %}CLANG
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wignored-attributes" // false-positive
-#endif
-
 namespace {% namespaces::main %}
 {
 	using std::size_t;
@@ -68,6 +63,7 @@ namespace {% namespaces::main %}
 	//% meta::is_integral
 	//% meta::is_unsigned
 
+	//% unwrap					guarded
 	//% max						guarded
 	//% clamp					guarded
 	//% is_constant_evaluated	guarded
@@ -87,10 +83,6 @@ namespace {% namespaces::main %}
 
 #if {% macros::prefix %}TAGGED_PTR_HAS_TRAITS
 //% tagged_ptr::traits	guarded
-#endif
-
-#if {% macros::prefix %}CLANG
-#pragma clang diagnostic pop
 #endif
 
 #endif // {% macros::prefix %}TAGGED_PTR_HPP

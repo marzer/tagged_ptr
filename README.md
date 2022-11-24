@@ -12,32 +12,27 @@ Requires C++17.
 namespace mz
 {
     // template params:
-    //	T			the pointed-to type
-    //	MinAlign	the minimum alignment of any value stored in the pointer
+    //	T		the pointed-to type
+    //	Align	the minimum alignment of any value stored in the pointer
     //
     // note:
     //	functions and `void` do not have a default alignment;
-    //	you must explicitly specify MinAlign for pointers to these types.
-    template <typename T, size_t MinAlign = alignof(T)>
+    //	you must explicitly specify Align for pointers to these types.
+    template <typename T, size_t Align = alignof(T)>
     class tagged_ptr
     {
         //------------------------------------------
         // typedefs + constants
         //------------------------------------------
 
-        using element_type = T;
+        using element_type  = T;
+        using pointer       = T*;
+        using const_pointer = const T*;
+        using tag_type      = /* unsigned integer large enough to store the tag bits */;
 
-        using pointer = std::add_pointer_t<T>;
-
-        using const_pointer = std::add_pointer_t<std::add_const_t<T>>;
-
-        using tag_type = /* an unsigned integer large enough to store all the tag bits */;
-
-        static constexpr size_t minimum_alignment = MinAlign;
-
+        static constexpr size_t alignment     = Align;
         static constexpr size_t tag_bit_count = /* the number of tag bits that may be stored */;
-
-        static constexpr tag_type max_tag = /* the largest tag value for this pointer */;
+        static constexpr tag_type max_tag     = /* the largest tag value for this pointer */;
 
         //------------------------------------------
         // construction, copying, destruction
@@ -184,8 +179,8 @@ namespace mz
 // std::pointer_traits specialization
 namespace std
 {
-    template <typename T, size_t MinAlign>
-    struct pointer_traits<mz::tagged_ptr<T, MinAlign>>;
+    template <typename T, size_t Align>
+    struct pointer_traits<mz::tagged_ptr<T, Align>>;
 }
 
 ```
