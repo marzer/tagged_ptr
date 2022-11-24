@@ -4,12 +4,14 @@
 // SPDX-License-Identifier: MIT
 
 #include <mz/tagged_ptr.hpp>
-#include <array>
 
 #ifdef _MSC_VER
 #pragma warning(push, 0)
 #endif
 
+#include <array>
+#include <vector>
+#include <memory>
 #include <catch2/catch_all.hpp>
 
 #ifdef _MSC_VER
@@ -250,22 +252,28 @@ TEST_CASE("tagged_ptr - pod tags")
 	CHECK(ptr.ptr() == nullptr);
 	CHECK(ptr == nullptr);
 	CHECK(ptr.tag() == 0u);
+
 	ptr.tag(data{ 'k' });
 	CHECK(ptr.ptr() == nullptr);
 	CHECK(ptr.tag() != 0u);
 	CHECK(ptr.tag<data>().val == 'k');
 
-	std::unique_ptr<align_big> aligned{ new align_big };
-	ptr = aligned.get();
-	CHECK(ptr.ptr() == aligned.get());
-	CHECK(ptr.tag<data>().val == 'k');
+	std::vector<std::unique_ptr<align_big>> ptrs;
+	ptrs.reserve(1024u);
+	for (size_t i = 0; i < 1024; i++)
+	{
+		ptrs.push_back(std::make_unique<align_big>());
+		ptr = ptrs.back().get();
+		CHECK(ptr.ptr() == ptrs.back().get());
+		CHECK(ptr.tag<data>().val == 'k');
+	}
 
 	ptr = tagged_ptr<align_big>{};
 	CHECK(ptr.ptr() == nullptr);
 	CHECK(ptr.tag() == 0u);
 
-	ptr = { aligned.get(), data{ 'k' } };
-	CHECK(ptr.ptr() == aligned.get());
+	ptr = { ptrs.back().get(), data{ 'k' } };
+	CHECK(ptr.ptr() == ptrs.back().get());
 	CHECK(ptr.tag<data>().val == 'k');
 }
 

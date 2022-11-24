@@ -16,10 +16,7 @@
 
 //% preprocessor::cpp
 //% preprocessor::compilers
-//% preprocessor::arch
-#if !{% macros::prefix %}ARCH_BITNESS
-	#error Unknown architecture "bitness" - please report an issue at github.com/marzer/tagged_ptr/issues, thanks!
-#endif
+//% preprocessor::arch::amd64
 
 //% preprocessor::has_builtin
 //% preprocessor::has_cpp_attr
@@ -33,7 +30,7 @@
 //% preprocessor::trivial_abi
 //% preprocessor::hidden
 //% preprocessor::sfinae
-//% preprocessor::has_consteval_if
+//% preprocessor::has_if_consteval
 //% preprocessor::if_consteval
 //% preprocessor::constexpr_safe_assert
 
@@ -54,16 +51,14 @@
 namespace {% namespaces::main %}
 {
 	using std::size_t;
-	using std::nullptr_t;
+	using std::uintptr_t;
 
 	//% meta::remove_cvref
-	//% meta::remove_enum
-	//% meta::is_enum
+	//% meta::remove_enum		guarded
 	//% meta::is_cvref
 	//% meta::is_integral
 	//% meta::is_unsigned
 
-	//% unwrap					guarded
 	//% max						guarded
 	//% clamp					guarded
 	//% is_constant_evaluated	guarded
@@ -78,11 +73,11 @@ namespace {% namespaces::main %}
 	//% assume_aligned 			guarded
 }
 
-//% tagged_ptr::impl	guarded
-//% tagged_ptr 			guarded
+//% tagged_ptr::impl
+//% tagged_ptr
 
 #if {% macros::prefix %}TAGGED_PTR_HAS_TRAITS
-//% tagged_ptr::traits	guarded
+//% tagged_ptr::traits
 #endif
 
 #endif // {% macros::prefix %}TAGGED_PTR_HPP

@@ -6,6 +6,15 @@ Requires C++17.
 
 <br>
 
+## Features
+
+-   Familiar `std::unique_ptr`-like interface
+-   Fully `constexpr` (modulo compiler support)
+-   Support for storing enums and trivially-copyable structs in the tag data
+-   Lots of static checks to make sure you don't do The Bad™
+
+<br>
+
 ## Synopsis
 
 ```cpp
