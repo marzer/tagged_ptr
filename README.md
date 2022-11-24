@@ -11,180 +11,181 @@ Requires C++17.
 ```cpp
 namespace mz
 {
-	// template params:
-	//	T			the pointed-to type
-	//	MinAlign	the minimum alignment of any value stored in the pointer
-	//
-	// note:
-	//	functions and `void` do not have a default alignment;
-	//	you must explicitly specify MinAlign for pointers to these types.
-	template <typename T, size_t MinAlign = alignof(T)>
-	class tagged_ptr
-	{
-		//------------------------------------------
-		// typedefs + constants
-		//------------------------------------------
+    // template params:
+    //	T			the pointed-to type
+    //	MinAlign	the minimum alignment of any value stored in the pointer
+    //
+    // note:
+    //	functions and `void` do not have a default alignment;
+    //	you must explicitly specify MinAlign for pointers to these types.
+    template <typename T, size_t MinAlign = alignof(T)>
+    class tagged_ptr
+    {
+        //------------------------------------------
+        // typedefs + constants
+        //------------------------------------------
 
-		using element_type = T;
+        using element_type = T;
 
-		using pointer = std::add_pointer_t<T>;
+        using pointer = std::add_pointer_t<T>;
 
-		using const_pointer = std::add_pointer_t<std::add_const_t<T>>;
+        using const_pointer = std::add_pointer_t<std::add_const_t<T>>;
 
-		using tag_type = /* an unsigned integer large enough to store all the tag bits */;
+        using tag_type = /* an unsigned integer large enough to store all the tag bits */;
 
-		static constexpr size_t minimum_alignment = MinAlign;
+        static constexpr size_t minimum_alignment = MinAlign;
 
-		static constexpr size_t tag_bit_count = /* the number of tag bits that may be stored */;
+        static constexpr size_t tag_bit_count = /* the number of tag bits that may be stored */;
 
-		static constexpr tag_type max_tag = /* the largest tag value for this pointer */;
+        static constexpr tag_type max_tag = /* the largest tag value for this pointer */;
 
-		//------------------------------------------
-		// construction, copying, destruction
-		//------------------------------------------
+        //------------------------------------------
+        // construction, copying, destruction
+        //------------------------------------------
 
-		// default construct the pointer and tag bits to zero
-		tagged_ptr() noexcept = default;
+        // default construct the pointer and tag bits to zero
+        constexpr tagged_ptr() noexcept = default;
 
-		// construct from a pointer, set tag bits to zero
-		explicit constexpr tagged_ptr(pointer value) noexcept;
+        // construct from a pointer, set tag bits to zero
+        explicit constexpr tagged_ptr(pointer value) noexcept;
 
-		// construct from a pointer and tag bits
-		//
-		// tag_value may be an unsigned integer/enum OR a trivially-copyable type small enough
-		template <typename U>
-		constexpr tagged_ptr(pointer value, const U& tag_value) noexcept;
+        // construct from a pointer and tag bits
+        //
+        // tag_value may be an unsigned integer/enum or a trivially-copyable type small enough
+        template <typename U>
+        constexpr tagged_ptr(pointer value, const U& tag_value) noexcept;
 
-		// initialize using nullptr
-		constexpr tagged_ptr(nullptr_t) noexcept;
+        // initialize using nullptr
+        constexpr tagged_ptr(nullptr_t) noexcept;
 
-		// tagged_ptr is trivially-copyable and trivially-destructible
-		constexpr tagged_ptr(const tagged_ptr&) noexcept = default;
-		constexpr tagged_ptr& operator=(const tagged_ptr&) noexcept = default;
-		~tagged_ptr() noexcept = default;
+        // tagged_ptr is trivially-copyable and trivially-destructible
+        constexpr tagged_ptr(const tagged_ptr&) noexcept = default;
+        constexpr tagged_ptr& operator=(const tagged_ptr&) noexcept = default;
+        ~tagged_ptr() noexcept = default;
 
-		//------------------------------------------
-		// retrieving the stored pointer
-		//------------------------------------------
+        //------------------------------------------
+        // retrieving the stored pointer
+        //------------------------------------------
 
-		// gets the stored pointer
-		constexpr pointer ptr() const noexcept;
+        // gets the stored pointer
+        constexpr pointer ptr() const noexcept;
 
-		// gets the stored pointer (alias for ptr())
-		constexpr pointer get() const noexcept;
+        // gets the stored pointer (alias for ptr())
+        constexpr pointer get() const noexcept;
 
-		// gets the stored pointer
-		explicit constexpr operator pointer() const noexcept;
+        // gets the stored pointer
+        explicit constexpr operator pointer() const noexcept;
 
-		// returns a reference to the pointed object
-		//
-		// this is only available when T is an object type
-		constexpr element_type& operator*() const noexcept;
+        // returns a reference to the pointed object
+        //
+        // this is only available when T is an object type
+        constexpr element_type& operator*() const noexcept;
 
-		// invokes the -> operator on the pointed object
-		//
-		// this is only available when T is a class type
-		constexpr pointer operator->() const noexcept;
+        // invokes the -> operator on the pointed object
+        //
+        // this is only available when T is a class type
+        constexpr pointer operator->() const noexcept;
 
-		//------------------------------------------
-		// changing the pointer
-		//------------------------------------------
+        //------------------------------------------
+        // changing the pointer
+        //------------------------------------------
 
-		// changes the pointer value without changing the tag bits
-		constexpr tagged_ptr& ptr(pointer value) noexcept;
+        // changes the pointer value without changing the tag bits
+        constexpr tagged_ptr& ptr(pointer value) noexcept;
 
-		// changes the pointer value without changing the tag bits
-		constexpr tagged_ptr& operator=(pointer rhs) noexcept;
+        // changes the pointer value without changing the tag bits
+        constexpr tagged_ptr& operator=(pointer rhs) noexcept;
 
-		// clears the pointer value without changing the tag bits
-		constexpr tagged_ptr& clear_ptr() noexcept;
+        // clears the pointer value without changing the tag bits
+        constexpr tagged_ptr& clear_ptr() noexcept;
 
-		//------------------------------------------
-		// retrieving the tag bits
-		//------------------------------------------
+        //------------------------------------------
+        // retrieving the tag bits
+        //------------------------------------------
 
-		// gets the tag bits
-		//
-		// U defaults to tag_type, but can be any compatible unsigned integer/enum or trivially-copyable type
-		template <typename U = tag_type>
-		constexpr U tag() const noexcept;
+        // gets the tag bits
+        //
+        // U defaults to tag_type, but can be any compatible unsigned integer/enum
+        // or trivially-copyable type
+        template <typename U = tag_type>
+        constexpr U tag() const noexcept;
 
-		// gets the value of a particular tag bit
-		constexpr bool tag_bit(size_t tag_bit_index) const noexcept;
+        // gets the value of a particular tag bit
+        constexpr bool tag_bit(size_t tag_bit_index) const noexcept;
 
-		//------------------------------------------
-		// changing the stored tag
-		//------------------------------------------
+        //------------------------------------------
+        // changing the stored tag
+        //------------------------------------------
 
-		// sets the tag bits
-		//
-		// tag_value may be an unsigned integer/enum OR a trivially-copyable type small enough
-		template <typename U>
-		constexpr tagged_ptr& tag(const U& tag_value) noexcept;
+        // sets the tag bits
+        //
+        // tag_value may be an unsigned integer/enum or a trivially-copyable type small enough
+        template <typename U>
+        constexpr tagged_ptr& tag(const U& tag_value) noexcept;
 
-		// sets the value of a particular tag bit
-		constexpr tagged_ptr& tag_bit(size_t tag_bit_index, bool val) noexcept;
+        // sets the value of a particular tag bit
+        constexpr tagged_ptr& tag_bit(size_t tag_bit_index, bool val) noexcept;
 
-		// clears the tag bits
-		constexpr tagged_ptr& clear_tag() noexcept;
+        // clears the tag bits
+        constexpr tagged_ptr& clear_tag() noexcept;
 
-		//------------------------------------------
-		// reset()
-		//------------------------------------------
+        //------------------------------------------
+        // reset()
+        //------------------------------------------
 
-		// clears the pointer and tag bits to zero
-		constexpr tagged_ptr& reset() noexcept
+        // clears the pointer and tag bits to zero
+        constexpr tagged_ptr& reset() noexcept
 
-		// overrides the pointer value and tag bits to zero
-		constexpr tagged_ptr& reset(pointer value) noexcept
+        // overrides the pointer value and tag bits to zero
+        constexpr tagged_ptr& reset(pointer value) noexcept
 
-		// overrides both the pointer value and the tag bits
-		//
-		// tag_value may be an unsigned integer/enum OR a trivially-copyable type small enough
-		template <typename U>
-		constexpr tagged_ptr& reset(pointer value, const U& tag_value) noexcept
+        // overrides both the pointer value and the tag bits
+        //
+        // tag_value may be an unsigned integer/enum or a trivially-copyable type small enough
+        template <typename U>
+        constexpr tagged_ptr& reset(pointer value, const U& tag_value) noexcept
 
-		//------------------------------------------
-		// comparison
-		//------------------------------------------
+        //------------------------------------------
+        // comparison
+        //------------------------------------------
 
-		// returns true if the pointer value is non-null (tag bits are ignored)
-		explicit constexpr operator bool() const noexcept;
+        // returns true if the pointer value is non-null (tag bits are ignored)
+        explicit constexpr operator bool() const noexcept;
 
-		// compares two tagged pointers for exact equality (tag bits are NOT ignored)
-		friend constexpr bool operator==(tagged_ptr lhs, tagged_ptr rhs) noexcept;
-		friend constexpr bool operator!=(tagged_ptr lhs, tagged_ptr rhs) noexcept;
+        // compares two tagged pointers for exact equality (tag bits are NOT ignored)
+        friend constexpr bool operator==(tagged_ptr lhs, tagged_ptr rhs) noexcept;
+        friend constexpr bool operator!=(tagged_ptr lhs, tagged_ptr rhs) noexcept;
 
-		// compares a tagged pointer with a raw pointer of the same type (tag bits are ignored)
-		friend constexpr bool operator==(tagged_ptr lhs, const_pointer rhs) noexcept;
-		friend constexpr bool operator!=(tagged_ptr lhs, const_pointer rhs) noexcept;
-		friend constexpr bool operator==(const_pointer lhs, tagged_ptr rhs) noexcept;
-		friend constexpr bool operator!=(const_pointer lhs, tagged_ptr rhs) noexcept;
+        // compares a tagged pointer with a raw pointer of the same type (tag bits are ignored)
+        friend constexpr bool operator==(tagged_ptr lhs, const_pointer rhs) noexcept;
+        friend constexpr bool operator!=(tagged_ptr lhs, const_pointer rhs) noexcept;
+        friend constexpr bool operator==(const_pointer lhs, tagged_ptr rhs) noexcept;
+        friend constexpr bool operator!=(const_pointer lhs, tagged_ptr rhs) noexcept;
 
-		//------------------------------------------
-		// function pointers
-		//------------------------------------------
+        //------------------------------------------
+        // function pointers
+        //------------------------------------------
 
-		// invokes the function call operator on the pointed function
-		//
-		// this is only available when T is a function
-		template <typename... U>
-		constexpr decltype(auto) operator()(U&&... args) const;
-	};
+        // invokes the function call operator on the pointed function
+        //
+        // this is only available when T is a function
+        template <typename... U>
+        constexpr decltype(auto) operator()(U&&... args) const noexcept(/*...*/);
+    };
 
-	// deduction guides
-	template <typename T>
-	tagged_ptr(T*) -> tagged_ptr<T>;
+    // deduction guides
+    template <typename T>
+    tagged_ptr(T*) -> tagged_ptr<T>;
 
-	template <typename T, typename U>
-	tagged_ptr(T*, U) -> tagged_ptr<T>;
+    template <typename T, typename U>
+    tagged_ptr(T*, U) -> tagged_ptr<T>;
 }
 
 // std::pointer_traits specialization
 namespace std
 {
-	template <typename T, size_t MinAlign>
-	struct pointer_traits<mz::tagged_ptr<T, MinAlign>>;
+    template <typename T, size_t MinAlign>
+    struct pointer_traits<mz::tagged_ptr<T, MinAlign>>;
 }
 
 ```

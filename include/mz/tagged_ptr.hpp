@@ -1011,7 +1011,8 @@ namespace mz::detail
 	{
 		uintptr_t bits_;
 
-		constexpr tagged_ptr_storage(uintptr_t bits) noexcept : bits_{ bits }
+		constexpr tagged_ptr_storage(uintptr_t bits) noexcept //
+			: bits_{ bits }
 		{}
 	};
 
@@ -1111,7 +1112,8 @@ namespace mz::detail
 		using base = tagged_ptr_to_function<T, MinAlign>;
 		using base::bits_;
 
-		constexpr tagged_ptr_to_object(uintptr_t bits = {}) noexcept : base{ bits }
+		constexpr tagged_ptr_to_object(uintptr_t bits = {}) noexcept //
+			: base{ bits }
 		{}
 
 	  public:
