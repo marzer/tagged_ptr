@@ -1,0 +1,127 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# documentation
+*.xml
+*.xslt
+*.xsd
+*.html
+*.temp
+docs/html/*
+docs/xml/*
+
+# visual studio
+.vs/
+*.Designer.cs.dll
+*.VC.VC.opendb
+*.VC.db
+*.aps
+*.exp
+*.cachefile
+*.ilk
+*.iobj
+*.ipdb
+*.lastbuildstate
+*.log
+*.meta
+*.ncb
+*.obj
+*.opendb
+*.opensdf
+*.pch
+*.pdb
+*.pgc
+*.pgd
+*.pidb
+*.psess
+*.rsp
+*.sbr
+*.scc
+*.sdf
+*.sln.docstates
+*.suo
+*.svclog
+*.tlb
+*.tlh
+*.tli
+*.tlog
+*.tmp
+*.tmp_proj
+*.user
+*.userosscache
+*.vsidx
+*.vsp
+*.vspscc
+*.vspx
+*.vssscc
+*_i.c
+*_i.h
+*_p.c
+.builds
+ipch/
+unsuccessfulbuild
+
+# meson
+meson-info/
+meson-logs/
+meson-private/
+
+# Including strong name files can present a security risk
+# (https://github.com/github/gitignore/pull/2483#issue-259490424)
+*.snk
+
+# python
+__pycache__/
+*.pyc
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# pitchfork
+build*/
+_build*/
+!build-aux/
+
+# meson subprojects
+subprojects/*/
+
+# sidle
+/sidledb.json

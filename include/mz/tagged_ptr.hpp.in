@@ -1,0 +1,86 @@
+//----------------------------------------------------------------------------------------------------------------------
+//
+// {% namespaces::main %}::tagged_ptr
+// https://github.com/marzer/tagged_ptr
+// SPDX-License-Identifier: MIT
+//
+//----------------------------------------------------------------------------------------------------------------------
+//% generated_header_preamble
+//----------------------------------------------------------------------------------------------------------------------
+#ifndef {% macros::prefix %}TAGGED_PTR_HPP
+#define {% macros::prefix %}TAGGED_PTR_HPP
+
+#define {% macros::prefix %}TAGGED_PTR_VERSION_MAJOR 1
+#define {% macros::prefix %}TAGGED_PTR_VERSION_MINOR 0
+#define {% macros::prefix %}TAGGED_PTR_VERSION_PATCH 0
+
+//% preprocessor::cpp
+//% preprocessor::compilers
+//% preprocessor::arch
+#if !{% macros::prefix %}ARCH_BITNESS
+	#error Unknown architecture "bitness" - please report an issue at github.com/marzer/tagged_ptr/issues, thanks!
+#endif
+
+//% preprocessor::has_builtin
+//% preprocessor::has_cpp_attr
+//% preprocessor::has_attr
+//% preprocessor::attr
+//% preprocessor::declspec
+//% preprocessor::always_inline
+//% preprocessor::nodiscard
+//% preprocessor::assume
+//% preprocessor::getters
+//% preprocessor::trivial_abi
+//% preprocessor::hidden
+//% preprocessor::sfinae
+//% preprocessor::has_consteval_if
+//% preprocessor::if_consteval
+//% preprocessor::constexpr_safe_assert
+
+#include <climits> // CHAR_BIT
+#include <cstddef> // size_t
+#include <cstring> // std::memcpy
+#include <cstdint>
+#include <cassert>
+#include <type_traits>
+
+#ifndef {% macros::prefix %}TAGGED_PTR_HAS_TRAITS
+	#define {% macros::prefix %}TAGGED_PTR_HAS_TRAITS 1
+#endif
+#if {% macros::prefix %}TAGGED_PTR_HAS_TRAITS
+#include <memory> // std::pointer_traits
+#endif
+
+namespace {% namespaces::main %}
+{
+	using std::size_t;
+
+	//% meta::remove_cvref
+	//% meta::remove_enum
+	//% meta::is_enum
+	//% meta::is_cvref
+	//% meta::is_integral
+	//% meta::is_unsigned
+
+	//% max						guarded
+	//% clamp					guarded
+	//% is_constant_evaluated	guarded
+
+	//% countl_zero_naive 		guarded
+	//% bit_width				guarded
+	//% bit_ceil				guarded
+	//% bit_floor				guarded
+	//% bit_cast				guarded
+	//% bit_fill_right 			guarded
+	//% has_single_bit 			guarded
+	//% assume_aligned 			guarded
+}
+
+//% tagged_ptr::impl	guarded
+//% tagged_ptr 			guarded
+
+#if {% macros::prefix %}TAGGED_PTR_HAS_TRAITS
+//% tagged_ptr::traits	guarded
+#endif
+
+#endif // {% macros::prefix %}TAGGED_PTR_HPP
