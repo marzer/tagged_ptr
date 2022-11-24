@@ -51,9 +51,15 @@
 #include <memory> // std::pointer_traits
 #endif
 
+#if {% macros::prefix %}CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wignored-attributes" // false-positive
+#endif
+
 namespace {% namespaces::main %}
 {
 	using std::size_t;
+	using std::nullptr_t;
 
 	//% meta::remove_cvref
 	//% meta::remove_enum
@@ -81,6 +87,10 @@ namespace {% namespaces::main %}
 
 #if {% macros::prefix %}TAGGED_PTR_HAS_TRAITS
 //% tagged_ptr::traits	guarded
+#endif
+
+#if {% macros::prefix %}CLANG
+#pragma clang diagnostic pop
 #endif
 
 #endif // {% macros::prefix %}TAGGED_PTR_HPP

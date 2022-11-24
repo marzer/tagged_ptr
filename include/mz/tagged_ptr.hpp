@@ -434,9 +434,15 @@
 #include <memory> // std::pointer_traits
 #endif
 
+#if MZ_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wignored-attributes" // false-positive
+#endif
+
 namespace mz
 {
 	using std::size_t;
+	using std::nullptr_t;
 
 	template <typename T>
 	using remove_cvref = std::remove_cv_t<std::remove_reference_t<T>>;
@@ -1440,6 +1446,10 @@ namespace std
 
 #endif // MZ_HAS_SNIPPET_TAGGED_PTR_TRAITS
 
+#endif
+
+#if MZ_CLANG
+#pragma clang diagnostic pop
 #endif
 
 #endif // MZ_TAGGED_PTR_HPP

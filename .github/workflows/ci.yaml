@@ -85,7 +85,7 @@ jobs:
 
             - name: Configure Meson
               run: |
-                  CC=cc CC_LD=${{ matrix.linker }} CXX=c++ CXX_LD=${{ matrix.linker }} meson setup build --buildtype=${{ matrix.type }} -Dbuild_tests=true -Dbuild_examples=true
+                  CC=cc CC_LD=${{ matrix.linker }} CXX=c++ CXX_LD=${{ matrix.linker }} meson setup build --buildtype=${{ matrix.type }} -Dbuild_tests=true
 
             - name: Build
               run: meson compile -C build

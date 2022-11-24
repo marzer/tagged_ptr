@@ -250,7 +250,7 @@ TEST_CASE("tagged_ptr - pod tags (large)")
 
 	tagged_ptr<aligned8192> ptr;
 	static_assert(sizeof(ptr) == sizeof(void*));
-	static_assert(decltype(ptr)::tag_bit_count >= sizeof(data) * build::bits_per_byte);
+	static_assert(decltype(ptr)::tag_bit_count >= sizeof(data) * CHAR_BIT);
 
 	CHECK(ptr.ptr() == nullptr);
 	CHECK(ptr == nullptr);
