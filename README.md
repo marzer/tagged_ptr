@@ -11,7 +11,7 @@ Requires C++17.
 -   Familiar `std::unique_ptr`-like interface
 -   Fully `constexpr` (modulo compiler support)
 -   Support for storing enums and trivially-copyable structs in the tag data
--   Lots of static checks to make sure you don't do The Bad™
+-   Lots of static checks and debug assertions to make sure you don't do The Bad™
 
 <br>
 
@@ -39,9 +39,9 @@ namespace mz
         using const_pointer = const T*;
         using tag_type      = /* unsigned integer large enough to store the tag bits */;
 
-        static constexpr size_t alignment     = Align;
-        static constexpr size_t tag_bit_count = /* the number of tag bits that may be stored */;
-        static constexpr tag_type max_tag     = /* the largest tag value for this pointer */;
+        static constexpr size_t   alignment     = Align;
+        static constexpr size_t   tag_bit_count = /* the number of tag bits that may be stored */;
+        static constexpr tag_type max_tag       = /* the largest tag value for this pointer */;
 
         //------------------------------------------
         // construction, copying, destruction
@@ -68,16 +68,16 @@ namespace mz
         ~tagged_ptr() noexcept = default;
 
         //------------------------------------------
-        // retrieving the stored pointer
+        // retrieving the pointer value
         //------------------------------------------
 
-        // gets the stored pointer
+        // gets the pointer value
         constexpr pointer ptr() const noexcept;
 
-        // gets the stored pointer (alias for ptr())
+        // gets the pointer value (alias for ptr())
         constexpr pointer get() const noexcept;
 
-        // gets the stored pointer
+        // gets the pointer value
         explicit constexpr operator pointer() const noexcept;
 
         // returns a reference to the pointed object
@@ -103,6 +103,9 @@ namespace mz
         // clears the pointer value without changing the tag bits
         constexpr tagged_ptr& clear_ptr() noexcept;
 
+        // checks if a raw pointer can be stored without clipping into the tag bits
+        static constexpr bool can_store_ptr(pointer value) noexcept;
+
         //------------------------------------------
         // retrieving the tag bits
         //------------------------------------------
@@ -118,7 +121,7 @@ namespace mz
         constexpr bool tag_bit(size_t tag_bit_index) const noexcept;
 
         //------------------------------------------
-        // changing the stored tag
+        // changing the tag
         //------------------------------------------
 
         // sets the tag bits
@@ -133,21 +136,26 @@ namespace mz
         // clears the tag bits
         constexpr tagged_ptr& clear_tag() noexcept;
 
+        // checks if a tag value is has compatible traits (copyable, small enough, etc.)
+        // and can be stored without clipping into the pointer bits
+        template <typename U>
+        static constexpr bool can_store_tag(const U& tag_value) noexcept;
+
         //------------------------------------------
         // reset()
         //------------------------------------------
 
-        // clears the pointer and tag bits to zero
-        constexpr tagged_ptr& reset() noexcept
+        // resets both the pointer value and tag bits to zero
+        constexpr tagged_ptr& reset() noexcept;
 
-        // overrides the pointer value and tag bits to zero
-        constexpr tagged_ptr& reset(pointer value) noexcept
+        // overrides the pointer value and resets the tag bits to zero
+        constexpr tagged_ptr& reset(pointer value) noexcept;
 
         // overrides both the pointer value and the tag bits
         //
         // tag_value may be an unsigned integer/enum or a trivially-copyable type small enough
         template <typename U>
-        constexpr tagged_ptr& reset(pointer value, const U& tag_value) noexcept
+        constexpr tagged_ptr& reset(pointer value, const U& tag_value) noexcept;
 
         //------------------------------------------
         // comparison

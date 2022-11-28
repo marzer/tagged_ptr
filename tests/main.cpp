@@ -149,6 +149,8 @@ TEST_CASE("tagged_ptr - basic initialization")
 	CHECK(static_cast<void*>(nullptr) == val);
 	CHECK(static_cast<const void*>(nullptr) == val);
 	CHECK(val.tag() == 0u);
+	CHECK(tp::can_store_ptr(nullptr));
+	CHECK(tp::can_store_tag(0u));
 
 	auto ptr = reinterpret_cast<void*>(uintptr_t{ 0x12345670u });
 	val		 = tp{ ptr };
@@ -188,16 +190,6 @@ TEST_CASE("tagged_ptr - integral tags")
 	CHECK(val.tag() == 0b1111u);
 	val.tag(0b0000u);
 	CHECK(val.tag() == 0b0000u);
-	val.tag(0b11111111u);
-	if constexpr (detail::tptr_addr_free_bits >= 4)
-	{
-		CHECK(val.tag() == 0b11111111u);
-	}
-	else if constexpr (!detail::tptr_addr_free_bits)
-	{
-		CHECK(val.tag() != 0b11111111u);
-		CHECK(val.tag() == 0b1111u);
-	}
 }
 
 TEST_CASE("tagged_ptr - enum tags")
@@ -209,8 +201,7 @@ TEST_CASE("tagged_ptr - enum tags")
 	{
 		zero   = 0,
 		first  = 0b1100u,
-		second = 0b1111u,
-		big	   = 0b11111111u,
+		second = 0b1111u
 	};
 
 	auto ptr = reinterpret_cast<void*>(uintptr_t{ 0x12345670u });
@@ -223,16 +214,6 @@ TEST_CASE("tagged_ptr - enum tags")
 	CHECK(val.tag<an_enum>() == an_enum::second);
 	val.tag(an_enum::zero);
 	CHECK(val.tag<an_enum>() == an_enum::zero);
-	val.tag(an_enum::big);
-	if constexpr (detail::tptr_addr_free_bits >= 4)
-	{
-		CHECK(val.tag<an_enum>() == an_enum::big);
-	}
-	else if constexpr (!detail::tptr_addr_free_bits)
-	{
-		CHECK(val.tag<an_enum>() != an_enum::big);
-		CHECK(val.tag<an_enum>() == an_enum::second);
-	}
 }
 
 TEST_CASE("tagged_ptr - pod tags")
@@ -275,32 +256,6 @@ TEST_CASE("tagged_ptr - pod tags")
 	ptr = { ptrs.back().get(), data{ 'k' } };
 	CHECK(ptr.ptr() == ptrs.back().get());
 	CHECK(ptr.tag<data>().val == 'k');
-}
-
-TEST_CASE("tagged_ptr - alignments")
-{
-	using align32 = aligned<32>; // 5 free bits
-
-	tagged_ptr<align32> ptr;
-	static_assert(sizeof(ptr) == sizeof(void*));
-	using tag_type			  = decltype(ptr)::tag_type;
-	constexpr auto filled_tag = bit_fill_right<tag_type>(sizeof(tag_type) * CHAR_BIT);
-	ptr.tag(filled_tag);
-	const auto expectedTag = ptr.tag();
-	CHECK(expectedTag != filled_tag);
-	CHECK(expectedTag == tagged_ptr<align32>::max_tag);
-
-	std::unique_ptr<align32> aligned{ new align32 };
-	ptr = aligned.get();
-	CHECK(ptr.ptr() == aligned.get());
-	CHECK(ptr.tag() == expectedTag);
-
-	auto unaligned = apply_offset(aligned.get(), 1);
-	CHECK(reinterpret_cast<std::byte*>(aligned.get()) != reinterpret_cast<std::byte*>(unaligned) + 1);
-	ptr = unaligned; // low bit of the pointer should get masked off
-	CHECK(ptr.ptr() != unaligned);
-	CHECK(ptr.ptr() == aligned.get());
-	CHECK(ptr.tag() == expectedTag);
 }
 
 TEST_CASE("tagged_ptr - operators")
