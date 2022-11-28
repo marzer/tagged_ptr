@@ -1,8 +1,16 @@
 # `mz::tagged_ptr` [![MIT license](docs/images/badge-license-MIT.svg)](./LICENSE) [![C++17](docs/images/badge-c++17.svg)][cpp_compilers] [![Sponsor](docs/images/badge-sponsor.svg)][sponsor] [![Gitter](docs/images/badge-gitter.svg)][gitter]
 
-A [tagged pointer](https://en.wikipedia.org/wiki/Tagged_pointer) type for C++.
+A non-owning tagged pointer type for C++.
 
 Requires C++17.
+
+<br>
+
+## _"What is a tagged pointer?"_
+
+From [wikipedia/tagged_pointer](https://en.wikipedia.org/wiki/Tagged_pointer):
+
+> In computer science, a tagged pointer is a pointer (concretely a memory address) with additional data associated with it, such as an indirection bit or reference count. This additional data is often "folded" into the pointer, meaning stored inline in the data representing the address, taking advantage of certain properties of memory addressing.
 
 <br>
 
@@ -214,9 +222,15 @@ There is also support for use as a `meson.build` subproject.
 
 <br>
 
-## License
+## Caveats
 
-MIT. See [LICENSE](LICENSE).
+-   ⚠&#xFE0F; So far I've only been able to test this on x86 and AMD64. I welcome help testing it on other platforms! (see [Contributing])
+-   ⚠&#xFE0F; Absolutely no idea if this will work on big-endian systems. Help welcome! (see [Contributing])
+-   ⚠&#xFE0F; Some environments will perform pointer tagging natively (e.g. [Android on Armv8 AArch64](https://source.android.com/docs/security/test/tagged-pointers)); I recommend not using this class in those contexts.
+-   ⚠&#xFE0F; A new-ish compiler is necessary for the best diagnostics:
+    -   clang 9 or higher
+    -   gcc 9 or higher
+    -   MSVC 1925 (Visual Studio 2019 16.5) or higher
 
 <br>
 
@@ -225,15 +239,22 @@ MIT. See [LICENSE](LICENSE).
 There are three ways you can contribute:
 
 1. Reporting bug or making feature requests [here](https://github.com/marzer/tagged_ptr/issues/new)
-2. Opening a pull request (⚠&#xFE0F; _caveat - see below_)
+2. Opening a pull request (see below)
 3. Becoming a [sponsor] ❤&#xFE0F;
 
 ### Pull requests
 
 `tagged_ptr.hpp` is programmatically extracted from a much larger project so I won't accept pull requests made for this repository directly; if you wish to contribute a bugfix or a feature, please find the `tagged_ptr` implementation [in this project](https://github.com/marzer/muu) and propose your changes there instead. I will then propagate them to this satellite library when they are merged.
 
+<br>
+
+## License
+
+MIT. See [LICENSE](LICENSE).
+
 [tagged_ptr.hpp]: include/mz/tagged_ptr.hpp
 [license]: ./LICENSE
 [cpp_compilers]: https://en.cppreference.com/w/cpp/compiler_support
 [gitter]: https://gitter.im/marzer/community
 [sponsor]: https://github.com/sponsors/marzer
+[contributing]: #Contributing

@@ -10,8 +10,8 @@
 #ifndef {% macros::prefix %}TAGGED_PTR_HPP
 #define {% macros::prefix %}TAGGED_PTR_HPP
 
-#define {% macros::prefix %}TAGGED_PTR_VERSION_MAJOR 1
-#define {% macros::prefix %}TAGGED_PTR_VERSION_MINOR 0
+#define {% macros::prefix %}TAGGED_PTR_VERSION_MAJOR 0
+#define {% macros::prefix %}TAGGED_PTR_VERSION_MINOR 1
 #define {% macros::prefix %}TAGGED_PTR_VERSION_PATCH 0
 
 //% preprocessor::cpp
