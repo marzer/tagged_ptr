@@ -6,7 +6,7 @@
 //
 //----------------------------------------------------------------------------------------------------------------------
 //         THIS FILE WAS ASSEMBLED FROM MULTIPLE HEADER FILES BY A SCRIPT - PLEASE DON'T EDIT IT DIRECTLY
-//                              upstream: d4ed7304c5dc52296cf0b5d97f56232d59aa0e37
+//                              upstream: d6792a3923179acf65591eb8644e5e0bc43da0a7
 //----------------------------------------------------------------------------------------------------------------------
 //
 // MIT License
@@ -32,7 +32,7 @@
 #define MZ_TAGGED_PTR_HPP
 
 #define MZ_TAGGED_PTR_VERSION_MAJOR 0
-#define MZ_TAGGED_PTR_VERSION_MINOR 1
+#define MZ_TAGGED_PTR_VERSION_MINOR 2
 #define MZ_TAGGED_PTR_VERSION_PATCH 0
 
 #ifndef MZ_CPP
@@ -330,49 +330,20 @@
 #endif
 #endif
 
-#ifndef MZ_HAS_IF_CONSTEVAL
-#if defined(__cpp_if_consteval) && __cpp_if_consteval >= 202106
-#define MZ_HAS_IF_CONSTEVAL 1
-#else
-#define MZ_HAS_IF_CONSTEVAL 0
-#endif
-#endif
-
-#ifndef MZ_IF_CONSTEVAL
-#if MZ_HAS_IF_CONSTEVAL
-#define MZ_IF_CONSTEVAL if consteval
-#define MZ_IF_RUNTIME	if !consteval
-#else
-#define MZ_IF_CONSTEVAL if (::mz::is_constant_evaluated())
-#define MZ_IF_RUNTIME	if (!::mz::is_constant_evaluated())
-#endif
-#endif
-
-#ifndef MZ_CONSTEXPR_SAFE_ASSERT
-#ifdef NDEBUG
-#define MZ_CONSTEXPR_SAFE_ASSERT(cond) static_cast<void>(0)
-#else
-#define MZ_CONSTEXPR_SAFE_ASSERT(cond)                                                                                 \
-	do                                                                                                                 \
-	{                                                                                                                  \
-		if constexpr (MZ_HAS_IF_CONSTEVAL || ::mz::build::supports_is_constant_evaluated)                              \
-		{                                                                                                              \
-			MZ_IF_RUNTIME                                                                                              \
-			{                                                                                                          \
-				assert(cond);                                                                                          \
-			}                                                                                                          \
-		}                                                                                                              \
-	}                                                                                                                  \
-	while (false)
-#endif
-#endif
-
 #include <climits> // CHAR_BIT
 #include <cstddef> // size_t
 #include <cstring> // std::memcpy
 #include <cstdint>
-#include <cassert>
 #include <type_traits>
+
+#ifndef NDEBUG
+#ifndef MZ_ASSERT
+#include <cassert>
+#define MZ_ASSERT(...) assert(__VA_ARGS__)
+#endif
+#else
+#define MZ_ASSERT(...) static_cast<void>(0)
+#endif
 
 #ifndef MZ_TAGGED_PTR_HAS_TRAITS
 #define MZ_TAGGED_PTR_HAS_TRAITS 1
@@ -435,14 +406,21 @@ namespace mz
 
 #endif // MZ_HAS_SNIPPET_META_REMOVE_ENUM
 
+#ifndef MZ_HAS_SNIPPET_META_IS_CVREF
+#define MZ_HAS_SNIPPET_META_IS_CVREF
+
 	template <typename T>
 	inline constexpr bool is_cvref = std::is_const_v<T> || std::is_volatile_v<T> || std::is_reference_v<T>;
 
-	template <typename T>
-	inline constexpr bool is_integral = std::is_integral_v<remove_enum<remove_cvref<T>>>;
+#endif // MZ_HAS_SNIPPET_META_IS_CVREF
+
+#ifndef MZ_HAS_SNIPPET_META_IS_UNSIGNED
+#define MZ_HAS_SNIPPET_META_IS_UNSIGNED
 
 	template <typename T>
 	inline constexpr bool is_unsigned = std::is_unsigned_v<remove_enum<remove_cvref<T>>>;
+
+#endif // MZ_HAS_SNIPPET_META_IS_UNSIGNED
 
 #ifndef MZ_HAS_SNIPPET_MAX
 #define MZ_HAS_SNIPPET_MAX
@@ -478,45 +456,6 @@ namespace mz
 	}
 
 #endif // MZ_HAS_SNIPPET_CLAMP
-
-#ifndef MZ_HAS_SNIPPET_IS_CONSTANT_EVALUATED
-#define MZ_HAS_SNIPPET_IS_CONSTANT_EVALUATED
-
-	MZ_CONST_INLINE_GETTER
-	constexpr bool is_constant_evaluated() noexcept
-	{
-#if MZ_HAS_IF_CONSTEVAL
-
-		if consteval
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-
-#elif MZ_CLANG >= 9 || MZ_GCC >= 9 || MZ_MSVC >= 1925 || MZ_HAS_BUILTIN(is_constant_evaluated)
-
-		return __builtin_is_constant_evaluated();
-
-#elif defined(__cpp_lib_is_constant_evaluated) && __cpp_lib_is_constant_evaluated >= 201811
-
-		return std::is_constant_evaluated();
-
-#else
-
-		return false;
-
-#endif
-	}
-
-	namespace build
-	{
-		inline constexpr bool supports_is_constant_evaluated = is_constant_evaluated();
-	}
-
-#endif // MZ_HAS_SNIPPET_IS_CONSTANT_EVALUATED
 
 #ifndef MZ_HAS_SNIPPET_COUNTL_ZERO_NAIVE
 #define MZ_HAS_SNIPPET_COUNTL_ZERO_NAIVE
@@ -604,66 +543,6 @@ namespace mz
 	}
 
 #endif // MZ_HAS_SNIPPET_BIT_FLOOR
-
-#ifndef MZ_HAS_SNIPPET_BIT_CAST
-#define MZ_HAS_SNIPPET_BIT_CAST
-
-	MZ_CONSTRAINED_TEMPLATE((std::is_trivially_copyable_v<From>	 //
-							 && std::is_trivially_copyable_v<To> //
-							 && sizeof(From) == sizeof(To)),
-							typename To,
-							typename From)
-	MZ_PURE_INLINE_GETTER
-	constexpr To bit_cast(const From& from) noexcept
-	{
-		static_assert(!std::is_reference_v<To> && !std::is_reference_v<From>);
-
-#if MZ_CLANG >= 11 || MZ_GCC >= 11 || MZ_MSVC >= 1926 || (!MZ_CLANG && !MZ_GCC && MZ_HAS_BUILTIN(__builtin_bit_cast))
-
-#define MZ_HAS_INTRINSIC_BIT_CAST 1
-		return __builtin_bit_cast(To, from);
-
-#else
-
-#define MZ_HAS_INTRINSIC_BIT_CAST 0
-
-		if constexpr (std::is_same_v<std::remove_cv_t<From>, std::remove_cv_t<To>>)
-		{
-			return from;
-		}
-		else if constexpr (is_integral<From> && is_integral<To>)
-		{
-			return static_cast<To>(
-				static_cast<remove_enum<std::remove_cv_t<To>>>(static_cast<remove_enum<From>>(from)));
-		}
-		else if constexpr (!std::is_nothrow_default_constructible_v<std::remove_cv_t<To>>)
-		{
-			union proxy_t
-			{
-				alignas(To) unsigned char dummy[sizeof(To)];
-				std::remove_cv_t<To> to;
-
-				proxy_t() noexcept
-				{}
-			};
-
-			proxy_t proxy;
-			std::memcpy(&proxy.to, &from, sizeof(To));
-			return proxy.to;
-		}
-		else
-		{
-			static_assert(std::is_nothrow_default_constructible_v<std::remove_cv_t<To>>,
-						  "Bit-cast fallback requires the To type be nothrow default-constructible");
-
-			std::remove_cv_t<To> to;
-			std::memcpy(&to, &from, sizeof(To));
-			return to;
-		}
-#endif
-	}
-
-#endif // MZ_HAS_SNIPPET_BIT_CAST
 
 #ifndef MZ_HAS_SNIPPET_BIT_FILL_RIGHT
 #define MZ_HAS_SNIPPET_BIT_FILL_RIGHT
@@ -758,70 +637,111 @@ namespace mz
 
 }
 
+#ifndef MZ_TAGGED_PTR_BITS
+#define MZ_TAGGED_PTR_BITS 0 // 0 == "all the bits"
+#endif
+#if MZ_ARCH_AMD64 && MZ_TAGGED_PTR_BITS                                                                                \
+	&& !(MZ_TAGGED_PTR_BITS == 48 || MZ_TAGGED_PTR_BITS == 57 || MZ_TAGGED_PTR_BITS == 64)
+#error MZ_TAGGED_PTR_BITS must be 48, 57 or 64 on AMD64. See: https://en.wikipedia.org/wiki/X86-64
+#endif
+
+#define MZ_TAGGED_PTR_TAG_TYPE_CHECKS(Tag)                                                                             \
+	static_assert(!is_cvref<Tag>, "Tag type may not be explicitly cvref-qualified");                                   \
+	static_assert(std::is_trivially_default_constructible_v<Tag>, "Tag type must be trivially default-constructible"); \
+	static_assert(std::is_trivially_copyable_v<Tag>, "Tag type must be trivially copyable")
+
+#define MZ_TAGGED_PTR_TAG_OBJECT_CHECKS(Tag)                                                                           \
+	MZ_TAGGED_PTR_TAG_TYPE_CHECKS(Tag);                                                                                \
+	static_assert((sizeof(Tag) * CHAR_BIT) <= tag_bits, "Tag type must fit in the available tag bits")
+
+#if MZ_MSVC
+#pragma warning(push)
+#pragma warning(disable : 4296) // condition is always false/true
+#endif
+
 namespace mz::detail
 {
-	template <typename To = uintptr_t, typename From>
-	MZ_CONST_INLINE_GETTER
-	constexpr To uintptr_cast(From ptr) noexcept
-	{
-		static_assert(!is_cvref<From> && !is_cvref<To>);
-		static_assert(std::is_same_v<From, uintptr_t> || std::is_same_v<To, uintptr_t>);
-		static_assert(std::is_pointer_v<From> || std::is_pointer_v<To>);
+	static_assert(MZ_TAGGED_PTR_BITS < sizeof(uintptr_t) * CHAR_BIT);
 
-		MZ_IF_CONSTEVAL
-		{
-			return mz::bit_cast<To>(ptr);
-		}
-		else
-		{
-			return reinterpret_cast<To>(ptr);
-		}
-	}
+	inline constexpr size_t tptr_used_bits = MZ_TAGGED_PTR_BITS ? MZ_TAGGED_PTR_BITS : sizeof(uintptr_t) * CHAR_BIT;
+	inline constexpr size_t tptr_free_bits = sizeof(uintptr_t) * CHAR_BIT - tptr_used_bits;
 
-	inline constexpr size_t tptr_addr_highest_used_bit = MZ_ARCH_AMD64 ? 47 : (sizeof(uintptr_t) * CHAR_BIT - 1);
-	inline constexpr size_t tptr_addr_used_bits		   = tptr_addr_highest_used_bit + 1;
-	inline constexpr size_t tptr_addr_free_bits		   = sizeof(uintptr_t) * CHAR_BIT - tptr_addr_used_bits;
-	inline constexpr size_t tptr_addr_free_bits_mask   = bit_fill_right<uintptr_t>(tptr_addr_free_bits);
+	// clang-format off
+
+	template <size_t Bits>
+	using tptr_uint_for_bits =
+		std::conditional_t<(Bits <= sizeof(unsigned char) * CHAR_BIT), unsigned char,
+		std::conditional_t<(Bits <= sizeof(unsigned short) * CHAR_BIT), unsigned short,
+		std::conditional_t<(Bits <= sizeof(unsigned int) * CHAR_BIT), unsigned int,
+		std::conditional_t<(Bits <= sizeof(unsigned long) * CHAR_BIT), unsigned long,
+		std::conditional_t<(Bits <= sizeof(unsigned long long) * CHAR_BIT), unsigned long long,
+		void
+	>>>>>;
 
 	template <typename T>
-	struct tptr_uint
+	using tptr_is_enum_or_integer_ = std::disjunction<
+		std::is_enum<T>,
+		std::is_same<T, signed char>,
+		std::is_same<T, signed short>,
+		std::is_same<T, signed int>,
+		std::is_same<T, signed long>,
+		std::is_same<T, signed long long>,
+		std::is_same<T, unsigned char>,
+		std::is_same<T, unsigned short>,
+		std::is_same<T, unsigned int>,
+		std::is_same<T, unsigned long>,
+		std::is_same<T, unsigned long long>
+	>;
+
+	// clang-format on
+
+	template <typename T>
+	inline constexpr bool tptr_is_enum_or_integer = tptr_is_enum_or_integer_<remove_cvref<T>>::value;
+
+	template <typename T, bool = std::is_enum_v<T>>
+	struct tptr_make_unsigned_
 	{
-		using type = T;
+		using type = std::make_unsigned_t<T>;
+	};
+	template <typename T>
+	struct tptr_make_unsigned_<T, true>
+	{
+		static_assert(tptr_is_enum_or_integer<T>);
+
+		using type = std::make_unsigned_t<std::underlying_type_t<T>>;
+	};
+	template <typename T>
+	using tptr_make_unsigned = typename tptr_make_unsigned_<T>::type;
+
+	class MZ_TRIVIAL_ABI tptr_base
+	{
+	  protected:
+		uintptr_t bits_ = {};
+
+		MZ_NODISCARD_CTOR
+		constexpr tptr_base(uintptr_t bits) noexcept //
+			: bits_{ bits }
+		{}
+
+		MZ_CONST_INLINE_GETTER
+		static constexpr uintptr_t pack_ptr_unchecked(uintptr_t ptr) noexcept
+		{
+			if constexpr (tptr_free_bits > 0)
+				return (ptr << tptr_free_bits);
+			else
+				return ptr;
+		}
+
+	  public:
+		MZ_NODISCARD_CTOR
+		constexpr tptr_base() noexcept = default;
 	};
 
-	template <size_t Bits>
-	constexpr auto tptr_uint_for_bits_impl() noexcept
-	{
-		static_assert(Bits <= sizeof(uintptr_t) * CHAR_BIT);
-
-		if constexpr (Bits <= sizeof(unsigned char) * CHAR_BIT)
-			return tptr_uint<unsigned char>{};
-		else if constexpr (Bits <= sizeof(unsigned short) * CHAR_BIT)
-			return tptr_uint<unsigned short>{};
-		else if constexpr (Bits <= sizeof(unsigned int) * CHAR_BIT)
-			return tptr_uint<unsigned int>{};
-		else if constexpr (Bits <= sizeof(unsigned long) * CHAR_BIT)
-			return tptr_uint<unsigned long>{};
-		else if constexpr (Bits <= sizeof(unsigned long long) * CHAR_BIT)
-			return tptr_uint<unsigned long long>{};
-	}
-
-	template <size_t Bits>
-	using tptr_uint_for_bits = typename decltype(tptr_uint_for_bits_impl<Bits>())::type;
-
-	// Q: "what is tptr?"
-	//
-	// A: it's essentially a just templated namespace. everything is static and dependent on Align.
-	//    the reasoning being that the pointer type doesn't actually matter for all the different instantiations, only
-	//    the alignment + architecture, so setting it out this way greatly reduces instantiation work for the compiler.
-	//
-	//    as for why it's a separate class and not a base of the tagged_ptr hierarchy... eh. I don't have a good answer
-	//    for that other than "it is what it is" :P
-
 	template <size_t Align>
-	struct tptr
+	class MZ_TRIVIAL_ABI tptr_aligned_base : public tptr_base
 	{
-		static constexpr size_t tag_bits = (mz::max<size_t>(bit_width(Align), 1u) - 1u) + detail::tptr_addr_free_bits;
+	  protected:
+		static constexpr size_t tag_bits	= (mz::max<size_t>(mz::bit_width(Align), 1u) - 1u) + detail::tptr_free_bits;
 		static constexpr uintptr_t tag_mask = bit_fill_right<uintptr_t>(tag_bits);
 		static constexpr uintptr_t ptr_mask = ~tag_mask;
 
@@ -829,39 +749,40 @@ namespace mz::detail
 			tptr_uint_for_bits<mz::clamp<size_t>(bit_ceil(tag_bits), CHAR_BIT, sizeof(uintptr_t) * CHAR_BIT)>;
 		static_assert(sizeof(tag_type) <= sizeof(uintptr_t));
 
-		MZ_CONST_INLINE_GETTER
-		static constexpr uintptr_t pack_ptr_unchecked(uintptr_t ptr) noexcept
-		{
-			if constexpr (tptr_addr_free_bits > 0)
-				return (ptr << tptr_addr_free_bits);
-			else
-				return ptr;
-		}
+		using base = tptr_base;
+		using base::bits_;
+		using base::base;
 
 		MZ_CONST_GETTER
 		static constexpr bool can_store_ptr(uintptr_t ptr) noexcept
 		{
-			return !(pack_ptr_unchecked(ptr) & tag_mask);
+			if constexpr (!tag_bits)
+			{
+				return true;
+			}
+			else
+			{
+				return !(base::pack_ptr_unchecked(ptr) & tag_mask);
+			}
 		}
 
-		template <typename T>
+		template <typename Tag>
 		MZ_PURE_GETTER
-		static constexpr bool can_store_tag([[maybe_unused]] const T& tag) noexcept
+		static constexpr bool can_store_tag([[maybe_unused]] const Tag& tag) noexcept
 		{
-			if constexpr ((sizeof(T) * CHAR_BIT) <= tag_bits && std::is_trivially_copyable_v<T>)
+			if constexpr (!tag_bits)
 			{
-				return true; // this branch works for both uints and pod types
+				return false;
 			}
-			else if constexpr (is_unsigned<T>)
+			else if constexpr ((sizeof(Tag) * CHAR_BIT) <= tag_bits				 //
+							   && std::is_trivially_default_constructible_v<Tag> //
+							   && std::is_trivially_copyable_v<Tag>)
 			{
-				if constexpr (std::is_enum_v<T>)
-				{
-					return !(static_cast<std::underlying_type_t<T>>(tag) & ptr_mask);
-				}
-				else
-				{
-					return !(tag & ptr_mask);
-				}
+				return true; // this branch works for both ints and pod types
+			}
+			else if constexpr (tptr_is_enum_or_integer<Tag>)
+			{
+				return !(static_cast<tptr_make_unsigned<Tag>>(tag) & ptr_mask);
 			}
 			else
 			{
@@ -870,32 +791,30 @@ namespace mz::detail
 		}
 
 		MZ_CONST_GETTER
-		static constexpr uintptr_t pack_ptr(uintptr_t ptr) noexcept
+		static uintptr_t pack_ptr(uintptr_t ptr) noexcept
 		{
-			MZ_CONSTEXPR_SAFE_ASSERT((!ptr || bit_floor(ptr) >= Align)
-									 && "The pointer's address is aligned too strictly");
+			MZ_ASSERT((!ptr || mz::bit_floor(ptr) >= Align) && "The pointer's address is aligned too strictly aligned");
 
-			return pack_ptr_unchecked(ptr);
+			return base::pack_ptr_unchecked(ptr);
 		}
 
-		template <typename T>
+		template <typename Tag>
 		MZ_PURE_GETTER
-		static constexpr uintptr_t pack_both(uintptr_t ptr, const T& tag) noexcept
+		static uintptr_t pack_both(uintptr_t ptr, const Tag& tag) noexcept
 		{
-			static_assert(std::is_trivially_copyable_v<T>, "The tag type must be trivially copyable");
+			MZ_TAGGED_PTR_TAG_TYPE_CHECKS(Tag);
 
-			if constexpr (std::is_enum_v<T>)
+			if constexpr (std::is_enum_v<Tag>)
 			{
-				return pack_both(ptr, static_cast<std::underlying_type_t<T>>(tag));
+				return pack_both(ptr, static_cast<tptr_make_unsigned<Tag>>(tag));
 			}
 			else
 			{
-				if constexpr (is_unsigned<T>)
+				if constexpr (std::is_integral_v<Tag>)
 				{
-					if constexpr ((sizeof(T) * CHAR_BIT) > tag_bits)
+					if constexpr ((sizeof(Tag) * CHAR_BIT) > tag_bits)
 					{
-						MZ_CONSTEXPR_SAFE_ASSERT(can_store_tag(tag)
-												 && "The tag value cannot be used without truncation");
+						MZ_ASSERT(can_store_tag(tag) && "Tag value cannot be used without truncation");
 
 						return pack_ptr(ptr) | (static_cast<uintptr_t>(tag) & tag_mask);
 					}
@@ -906,47 +825,49 @@ namespace mz::detail
 				}
 				else // some pod type
 				{
-					static_assert((sizeof(T) * CHAR_BIT) <= tag_bits,
-								  "The tag type must fit in the available tag bits");
+					MZ_TAGGED_PTR_TAG_OBJECT_CHECKS(Tag);
 
-					struct source_t
+					uintptr_t bits;
+					if constexpr ((sizeof(Tag) * CHAR_BIT) < tag_bits)
 					{
-						unsigned char bytes[sizeof(uintptr_t)];
-					};
-					struct dest_t
+						bits = pack_ptr(ptr) & ptr_mask;
+					}
+					else
 					{
-						unsigned char bytes[sizeof(T)];
-					};
-					union proxy_t
-					{
-						source_t source;
-						dest_t dest;
-					};
-
-					proxy_t proxy{ mz::bit_cast<source_t>(pack_ptr(ptr)) };
-					proxy.dest = mz::bit_cast<dest_t>(tag);
-					return mz::bit_cast<uintptr_t>(proxy);
+						bits = pack_ptr(ptr);
+					}
+					std::memcpy(&bits, &tag, sizeof(tag));
+					return bits;
 				}
 			}
 		}
 
 		MZ_CONST_GETTER
-		static constexpr uintptr_t set_ptr(uintptr_t bits, uintptr_t ptr) noexcept
+		static uintptr_t set_ptr(uintptr_t bits, uintptr_t ptr) noexcept
 		{
-			return pack_ptr(ptr) | (bits & tag_mask);
+			if constexpr (tag_bits)
+			{
+				return pack_ptr(ptr) | (bits & tag_mask);
+			}
+			else
+			{
+				return pack_ptr(ptr);
+			}
 		}
 
-		MZ_CONSTRAINED_TEMPLATE(is_unsigned<T>, typename T)
+		MZ_CONSTRAINED_TEMPLATE(tptr_is_enum_or_integer<Tag>, typename Tag)
 		MZ_CONST_GETTER
-		static constexpr uintptr_t set_tag(uintptr_t bits, T tag) noexcept
+		static uintptr_t set_tag(uintptr_t bits, Tag tag) noexcept
 		{
-			if constexpr (std::is_enum_v<T>)
+			MZ_TAGGED_PTR_TAG_TYPE_CHECKS(Tag);
+
+			if constexpr (std::is_enum_v<Tag>)
 			{
-				return set_tag(bits, static_cast<std::underlying_type_t<T>>(tag));
+				return set_tag(bits, static_cast<tptr_make_unsigned<Tag>>(tag));
 			}
-			else if constexpr ((sizeof(T) * CHAR_BIT) > tag_bits)
+			else if constexpr ((sizeof(Tag) * CHAR_BIT) > tag_bits)
 			{
-				MZ_CONSTEXPR_SAFE_ASSERT(can_store_tag(tag) && "The tag value cannot be used without truncation");
+				MZ_ASSERT(can_store_tag(tag) && "Tag value cannot be used without truncation");
 
 				return (bits & ptr_mask) | (static_cast<uintptr_t>(tag) & tag_mask);
 			}
@@ -956,50 +877,45 @@ namespace mz::detail
 			}
 		}
 
-		MZ_CONSTRAINED_TEMPLATE(!is_unsigned<T>, typename T)
+		MZ_CONSTRAINED_TEMPLATE(!tptr_is_enum_or_integer<Tag>, typename Tag)
 		MZ_PURE_GETTER
-		static constexpr uintptr_t set_tag(uintptr_t bits, const T& tag) noexcept
+		static uintptr_t set_tag(uintptr_t bits, const Tag& tag) noexcept
 		{
-			static_assert(std::is_trivially_copyable_v<T>, "The tag type must be trivially copyable");
-			static_assert((sizeof(T) * CHAR_BIT) <= tag_bits, "The tag type must fit in the available tag bits");
+			MZ_TAGGED_PTR_TAG_OBJECT_CHECKS(Tag);
 
-			struct source_t
+			if constexpr ((sizeof(Tag) * CHAR_BIT) < tag_bits)
 			{
-				unsigned char bytes[sizeof(uintptr_t)];
-			};
-			struct dest_t
-			{
-				unsigned char bytes[sizeof(T)];
-			};
-			union proxy_t
-			{
-				source_t source;
-				dest_t dest;
-			};
-
-			proxy_t proxy{ mz::bit_cast<source_t>(bits & ptr_mask) };
-			proxy.dest = mz::bit_cast<dest_t>(tag);
-			return mz::bit_cast<uintptr_t>(proxy);
+				bits &= ptr_mask;
+			}
+			std::memcpy(&bits, &tag, sizeof(tag));
+			return bits;
 		}
 
 		MZ_CONST_INLINE_GETTER
-		static constexpr uintptr_t get_tag(uintptr_t bits) noexcept
+		static uintptr_t get_tag([[maybe_unused]] uintptr_t bits) noexcept
 		{
-			return bits & tag_mask;
+			if constexpr (tag_bits)
+			{
+				return bits & tag_mask;
+			}
+			else
+			{
+				return {};
+			}
 		}
 
 		MZ_CONST_GETTER
-		static constexpr bool get_tag_bit(uintptr_t bits, size_t index) noexcept
+		static bool get_tag_bit(uintptr_t bits, size_t index) noexcept
 		{
-			MZ_CONSTEXPR_SAFE_ASSERT(index < tag_bits && "Tag bit index out-of-bounds");
+			MZ_ASSERT(index < tag_bits && "Tag bit index out-of-bounds");
 
 			return bits & (uintptr_t{ 1 } << index);
 		}
 
 		MZ_CONST_GETTER
-		static constexpr uintptr_t set_tag_bit(uintptr_t bits, size_t index, bool state) noexcept
+		static uintptr_t set_tag_bit(uintptr_t bits, size_t index, bool state) noexcept
 		{
-			MZ_CONSTEXPR_SAFE_ASSERT(index < tag_bits && "Tag bit index out-of-bounds");
+			MZ_ASSERT(index < tag_bits && "Tag bit index out-of-bounds");
 
 			if (state)
 				return bits | (uintptr_t{ 1 } << index);
@@ -1007,102 +923,92 @@ namespace mz::detail
 				return bits & (~(uintptr_t{ 1 } << index));
 		}
 
-		template <typename T>
+		template <typename Tag>
 		MZ_CONST_GETTER
-		static constexpr T get_tag_as(uintptr_t bits) noexcept
+		static Tag get_tag_as_object(uintptr_t bits) noexcept
 		{
-			static_assert(std::is_trivially_copyable_v<T>, "The tag type must be trivially copyable");
-			static_assert((sizeof(T) * CHAR_BIT) <= tag_bits, "The tag type must fit in the available tag bits");
+			MZ_TAGGED_PTR_TAG_OBJECT_CHECKS(Tag);
 
-			using intermediate_type = tptr_uint_for_bits<mz::bit_ceil(sizeof(T) * CHAR_BIT)>;
-			static_assert(sizeof(intermediate_type) >= sizeof(T));
-			static_assert(sizeof(intermediate_type) <= sizeof(tag_type));
-
-			if constexpr (sizeof(T) == sizeof(intermediate_type))
-			{
-				return mz::bit_cast<T>(static_cast<intermediate_type>(get_tag(bits)));
-			}
-			else
-			{
-				struct source_t
-				{
-					unsigned char bytes[sizeof(intermediate_type)];
-				};
-				struct dest_t
-				{
-					unsigned char bytes[sizeof(T)];
-				};
-				union proxy_t
-				{
-					source_t source;
-					dest_t dest;
-				};
-				proxy_t proxy{ mz::bit_cast<source_t>(static_cast<intermediate_type>(get_tag(bits))) };
-				return mz::bit_cast<T>(proxy.dest);
-			}
+			Tag tag;
+			std::memcpy(&tag, &bits, sizeof(tag));
+			return tag;
 		}
 
+	  private:
+		// Q: why does get_ptr_impl exist?
+		//
+		// A: compilers that evaluate the if constexpr branches over-eagerly will issue warnings about
+		//    right-shifting >= sizeof(uintptr_t) when tptr_free_bits == 0; sticking the logic in a
+		//    separate template forces the branch evaluation to be delayed so the dead ones get pruned
+		//    properly without the warning.
+		template <size_t FreeBits, size_t UsedBits>
 		MZ_CONST_GETTER
-		static constexpr uintptr_t get_ptr(uintptr_t bits) noexcept
+		static uintptr_t get_ptr_impl(uintptr_t bits) noexcept
 		{
+			static_assert((FreeBits + UsedBits) == sizeof(uintptr_t) * CHAR_BIT);
+
 			bits &= ptr_mask;
-			if constexpr (tptr_addr_free_bits > 0)
+			if constexpr (FreeBits > 0)
 			{
-				bits >>= tptr_addr_free_bits;
+				bits >>= FreeBits;
 
 #if MZ_ARCH_AMD64
-				constexpr uintptr_t canon_test = uintptr_t{ 1u } << tptr_addr_highest_used_bit;
+				static constexpr uintptr_t canon_test = uintptr_t{ 1 } << (UsedBits - 1u);
 				if (bits & canon_test)
 				{
-					constexpr uintptr_t canon_mask = tptr_addr_free_bits_mask << tptr_addr_used_bits;
+					static constexpr uintptr_t canon_mask = bit_fill_right<uintptr_t>(FreeBits) << UsedBits;
 					bits |= canon_mask;
 				}
 #endif
 			}
 			return bits;
 		}
+
+	  public:
+		MZ_CONST_INLINE_GETTER
+		static uintptr_t get_ptr(uintptr_t bits) noexcept
+		{
+			return get_ptr_impl<tptr_free_bits, tptr_used_bits>(bits);
+		}
+
+	  public:
+		MZ_NODISCARD_CTOR
+		constexpr tptr_aligned_base() noexcept = default;
 	};
 
-	struct MZ_TRIVIAL_ABI tagged_ptr_storage
-	{
-		uintptr_t bits_;
-
-		constexpr tagged_ptr_storage(uintptr_t bits) noexcept //
-			: bits_{ bits }
-		{}
-	};
-
+	// primary template; T is a function
 	template <typename T, size_t Align, bool = std::is_function_v<T>>
-	struct MZ_TRIVIAL_ABI tagged_ptr_to_function : protected tagged_ptr_storage
+	class MZ_TRIVIAL_ABI tptr_to_function : public tptr_aligned_base<Align>
 	{
 	  protected:
-		using base = tagged_ptr_storage;
+		using base = tptr_aligned_base<Align>;
 		using base::bits_;
 		using base::base;
 
 	  public:
-		MZ_PURE_GETTER
-		constexpr T* ptr() const noexcept
-		{
-			using tptr = detail::tptr<Align>;
+		MZ_NODISCARD_CTOR
+		constexpr tptr_to_function() noexcept = default;
 
-			return uintptr_cast<T*>(tptr::get_ptr(bits_));
+		MZ_PURE_GETTER
+		T* ptr() const noexcept
+		{
+			return reinterpret_cast<T*>(base::get_ptr(bits_));
 		}
 
 		MZ_PURE_INLINE_GETTER
-		constexpr T* get() const noexcept
+		T* get() const noexcept
 		{
 			return ptr();
 		}
 
 		MZ_PURE_INLINE_GETTER
-		explicit constexpr operator T*() const noexcept
+		explicit operator T*() const noexcept
 		{
 			return ptr();
 		}
 
 		template <typename... U>
-		constexpr decltype(auto) operator()(U&&... args) const noexcept(std::is_nothrow_invocable_v<T, U&&...>)
+		decltype(auto) operator()(U&&... args) const noexcept(std::is_nothrow_invocable_v<T, U&&...>)
 		{
 			static_assert(std::is_invocable_v<T, U&&...>);
 
@@ -1110,79 +1016,79 @@ namespace mz::detail
 		}
 	};
 
+	// specialization; T is an object or void
 	template <typename T, size_t Align>
-	struct MZ_TRIVIAL_ABI tagged_ptr_to_function<T, Align, false> : protected tagged_ptr_storage
+	struct MZ_TRIVIAL_ABI tptr_to_function<T, Align, false> : public tptr_aligned_base<Align>
 	{
 	  protected:
-		using base = tagged_ptr_storage;
+		using base = tptr_aligned_base<Align>;
 		using base::bits_;
 		using base::base;
 
 	  public:
+		MZ_NODISCARD_CTOR
+		constexpr tptr_to_function() noexcept = default;
+
 		MZ_PURE_GETTER
 		MZ_ATTR(assume_aligned(Align))
-		constexpr T* ptr() const noexcept
+		T* ptr() const noexcept
 		{
-			using tptr = detail::tptr<Align>;
-
-			return mz::assume_aligned<Align>(uintptr_cast<T*>(tptr::get_ptr(bits_)));
+			return mz::assume_aligned<Align>(reinterpret_cast<T*>(base::get_ptr(bits_)));
 		}
 
 		MZ_PURE_INLINE_GETTER
 		MZ_ATTR(assume_aligned(Align))
-		constexpr T* get() const noexcept
+		T* get() const noexcept
 		{
 			return ptr();
 		}
 
 		MZ_PURE_INLINE_GETTER
 		MZ_ATTR(assume_aligned(Align))
-		explicit constexpr operator T*() const noexcept
+		explicit operator T*() const noexcept
 		{
 			return ptr();
 		}
 	};
 
+	// primary template; T is an object
 	template <typename T, size_t Align, bool = (!std::is_function_v<T> && !std::is_void_v<T>)>
-	struct MZ_TRIVIAL_ABI tagged_ptr_to_object : public tagged_ptr_to_function<T, Align>
+	struct MZ_TRIVIAL_ABI tptr_to_object : public tptr_to_function<T, Align>
 	{
 	  protected:
-		using base = tagged_ptr_to_function<T, Align>;
+		using base = tptr_to_function<T, Align>;
 		using base::bits_;
-
-		constexpr tagged_ptr_to_object(uintptr_t bits = {}) noexcept //
-			: base{ bits }
-		{}
+		using base::base;
 
 	  public:
-		using base::ptr;
+		MZ_NODISCARD_CTOR
+		constexpr tptr_to_object() noexcept = default;
 
-		MZ_PURE_GETTER
-		constexpr T& operator*() const noexcept
+		MZ_PURE_INLINE_GETTER
+		T& operator*() const noexcept
 		{
-			return *ptr();
+			return *base::ptr();
 		}
 
-		MZ_PURE_GETTER
-		constexpr T* operator->() const noexcept
+		MZ_PURE_INLINE_GETTER
+		T* operator->() const noexcept
 		{
-			return ptr();
+			return base::ptr();
 		}
 	};
 
+	// specialization; T is a function or void
 	template <typename T, size_t Align>
-	struct MZ_TRIVIAL_ABI tagged_ptr_to_object<T, Align, false> : public tagged_ptr_to_function<T, Align>
+	struct MZ_TRIVIAL_ABI tptr_to_object<T, Align, false> : public tptr_to_function<T, Align>
 	{
 	  protected:
-		using base = tagged_ptr_to_function<T, Align>;
+		using base = tptr_to_function<T, Align>;
 		using base::bits_;
-
-		constexpr tagged_ptr_to_object(uintptr_t bits = {}) noexcept //
-			: base{ bits }
-		{}
+		using base::base;
 
 	  public:
-		using base::ptr;
+		MZ_NODISCARD_CTOR
+		constexpr tptr_to_object() noexcept = default;
 	};
 
 	struct tptr_nullptr_deduced_tag
@@ -1194,12 +1100,21 @@ namespace mz::detail
 	inline constexpr size_t tptr_min_align<T, true> = 1;
 }
 
+#if MZ_MSVC
+#pragma warning(pop)
+#endif
+
 namespace mz
 {
 	template <typename T, size_t Align = detail::tptr_min_align<T>>
 	class MZ_TRIVIAL_ABI tagged_ptr //
-		MZ_HIDDEN_BASE(public detail::tagged_ptr_to_object<T, Align>)
+		MZ_HIDDEN_BASE(public detail::tptr_to_object<T, Align>)
 	{
+	  private:
+		using base = detail::tptr_to_object<T, Align>;
+		using base::bits_;
+		using base::base;
+
 		static_assert(!std::is_same_v<T, detail::tptr_nullptr_deduced_tag>,
 					  "Tagged pointers cannot have their type deduced from a nullptr"
 					  " (a nullptr is meaningless in this context)");
@@ -1213,13 +1128,8 @@ namespace mz
 		static_assert(Align >= detail::tptr_min_align<T>,
 					  "Alignment cannot be smaller than the type's actual alignment");
 
-		static_assert(Align > 1 || detail::tptr_addr_free_bits > 0,
+		static_assert(Align > 1 || base::tag_bits > 0,
 					  "Types aligned on a single byte cannot be pointed to by a tagged pointer on this platform");
-
-	  private:
-		using tptr = detail::tptr<Align>;
-		using base = detail::tagged_ptr_to_object<T, Align>;
-		using base::bits_;
 
 	  public:
 		using element_type = T;
@@ -1229,36 +1139,31 @@ namespace mz
 
 		using const_pointer = std::add_pointer_t<std::add_const_t<T>>;
 
-		using tag_type = typename tptr::tag_type;
+		using tag_type = typename base::tag_type;
 
 		static constexpr size_t alignment = Align;
 
-		static constexpr size_t tag_bit_count = tptr::tag_bits;
+		static constexpr size_t tag_bit_count = base::tag_bits;
 
 		static constexpr tag_type max_tag = bit_fill_right<tag_type>(tag_bit_count);
 
 		MZ_NODISCARD_CTOR
-		explicit constexpr tagged_ptr(pointer value) noexcept //
-			: base{ tptr::pack_ptr(detail::uintptr_cast(value)) }
-		{}
-
-		template <typename U>
-		MZ_NODISCARD_CTOR
-		constexpr tagged_ptr(pointer value, const U& tag_value) noexcept //
-			: base{ tptr::pack_both(detail::uintptr_cast(value), tag_value) }
-		{
-			static_assert(is_unsigned<U> //
-							  || (std::is_trivially_copyable_v<U> && sizeof(U) * CHAR_BIT <= tag_bit_count),
-						  "Tag types must be unsigned integrals or trivially-copyable"
-						  " and small enough to fit in the available tag bits");
-		}
+		constexpr tagged_ptr() noexcept = default;
 
 		MZ_NODISCARD_CTOR
 		constexpr tagged_ptr(std::nullptr_t) noexcept
 		{}
 
 		MZ_NODISCARD_CTOR
-		constexpr tagged_ptr() noexcept = default;
+		explicit tagged_ptr(pointer value) noexcept //
+			: base{ base::pack_ptr(reinterpret_cast<uintptr_t>(value)) }
+		{}
+
+		template <typename Tag>
+		MZ_NODISCARD_CTOR
+		tagged_ptr(pointer value, const Tag& tag_value) noexcept //
+			: base{ base::pack_both(reinterpret_cast<uintptr_t>(value), tag_value) }
+		{}
 
 		MZ_NODISCARD_CTOR
 		constexpr tagged_ptr(const tagged_ptr&) noexcept = default;
@@ -1273,21 +1178,16 @@ namespace mz
 			return *this;
 		}
 
-		constexpr tagged_ptr& reset(pointer value) noexcept
+		tagged_ptr& reset(pointer value) noexcept
 		{
-			bits_ = tptr::pack_ptr(detail::uintptr_cast(value));
+			bits_ = base::pack_ptr(reinterpret_cast<uintptr_t>(value));
 			return *this;
 		}
 
-		template <typename U>
-		constexpr tagged_ptr& reset(pointer value, const U& tag_value) noexcept
+		template <typename Tag>
+		tagged_ptr& reset(pointer value, const Tag& tag_value) noexcept
 		{
-			static_assert(is_unsigned<U> //
-							  || (std::is_trivially_copyable_v<U> && sizeof(U) * CHAR_BIT <= tag_bit_count),
-						  "Tag types must be unsigned integrals or trivially-copyable"
-						  " and small enough to fit in the available tag bits");
-
-			bits_ = tptr::pack_both(detail::uintptr_cast(value), tag_value);
+			bits_ = base::pack_both(reinterpret_cast<uintptr_t>(value), tag_value);
 			return *this;
 		}
 
@@ -1298,114 +1198,106 @@ namespace mz
 #else
 #endif
 		MZ_CONST_INLINE_GETTER
-		static constexpr bool can_store_ptr(pointer value) noexcept
+		static bool can_store_ptr(pointer value) noexcept
 		{
-			return tptr::can_store_ptr(detail::uintptr_cast(value));
+			return base::can_store_ptr(reinterpret_cast<uintptr_t>(value));
 		}
 
-		constexpr tagged_ptr& ptr(pointer value) noexcept
+		tagged_ptr& ptr(pointer value) noexcept
 		{
-			bits_ = tptr::set_ptr(bits_, detail::uintptr_cast(value));
+			bits_ = base::set_ptr(bits_, reinterpret_cast<uintptr_t>(value));
 			return *this;
 		}
 
 		MZ_ALWAYS_INLINE
-		constexpr tagged_ptr& operator=(pointer rhs) noexcept
+		tagged_ptr& operator=(pointer rhs) noexcept
 		{
 			return ptr(rhs);
 		}
 
 		constexpr tagged_ptr& clear_ptr() noexcept
 		{
-			bits_ &= tptr::tag_mask;
+			bits_ &= base::tag_mask;
 			return *this;
 		}
 
-		template <typename U = tag_type>
+		template <typename Tag = tag_type>
 		MZ_PURE_GETTER
-		constexpr U tag() const noexcept
+		Tag tag() const noexcept
 		{
-			static_assert(!std::is_reference_v<U>, "Reference types are not allowed");
-			static_assert(std::is_trivially_copyable_v<U>, "Tag types must be trivially-copyable");
+			MZ_TAGGED_PTR_TAG_TYPE_CHECKS(Tag);
 
-			if constexpr (is_unsigned<U>)
+			if constexpr (detail::tptr_is_enum_or_integer<Tag>)
 			{
-				static_assert(
-					sizeof(U) >= sizeof(tag_type),
-					"The destination integer type is not large enough to store the tag without a loss of data");
-				return static_cast<U>(tptr::get_tag(bits_));
+				static_assert(sizeof(Tag) * CHAR_BIT >= tag_bit_count,
+							  "The destination type is not large enough to store the tag without a loss of data");
+
+				return static_cast<Tag>(base::get_tag(bits_));
 			}
 			else
 			{
-				static_assert((sizeof(U) * CHAR_BIT) <= tag_bit_count, "Tag types must fit in the available tag bits");
-
-				return tptr::template get_tag_as<U>(bits_);
+				return base::template get_tag_as_object<Tag>(bits_);
 			}
 		}
 
-		template <typename U>
+		template <typename Tag>
 		MZ_PURE_INLINE_GETTER
-		static constexpr bool can_store_tag(const U& tag_value) noexcept
+		static constexpr bool can_store_tag(const Tag& tag_value) noexcept
 		{
-			return tptr::can_store_tag(tag_value);
+			return base::can_store_tag(tag_value);
 		}
 
-		template <typename U>
-		constexpr tagged_ptr& tag(const U& tag_value) noexcept
+		template <typename Tag>
+		tagged_ptr& tag(const Tag& tag_value) noexcept
 		{
-			static_assert(is_unsigned<U> //
-							  || (std::is_trivially_copyable_v<U> && sizeof(U) * CHAR_BIT <= tag_bit_count),
-						  "Tag types must be unsigned integrals or trivially-copyable"
-						  " and small enough to fit in the available tag bits");
-
-			bits_ = tptr::set_tag(bits_, tag_value);
+			bits_ = base::set_tag(bits_, tag_value);
 			return *this;
 		}
 
 		MZ_PURE_GETTER
-		constexpr bool tag_bit(size_t tag_bit_index) const noexcept
+		bool tag_bit(size_t tag_bit_index) const noexcept
 		{
-			return tptr::get_tag_bit(bits_, tag_bit_index);
+			return base::get_tag_bit(bits_, tag_bit_index);
 		}
 
-		constexpr tagged_ptr& tag_bit(size_t tag_bit_index, bool val) noexcept
+		tagged_ptr& tag_bit(size_t tag_bit_index, bool val) noexcept
 		{
-			bits_ = tptr::set_tag_bit(bits_, tag_bit_index, val);
+			bits_ = base::set_tag_bit(bits_, tag_bit_index, val);
 			return *this;
 		}
 
 		constexpr tagged_ptr& clear_tag() noexcept
 		{
-			bits_ &= tptr::ptr_mask;
+			bits_ &= base::ptr_mask;
 			return *this;
 		}
 
 		MZ_PURE_INLINE_GETTER
 		explicit constexpr operator bool() const noexcept
 		{
-			return bits_ & tptr::ptr_mask;
+			return bits_ & base::ptr_mask;
 		}
 
 		MZ_CONST_INLINE_GETTER
-		friend constexpr bool operator==(tagged_ptr lhs, const_pointer rhs) noexcept
+		friend bool operator==(tagged_ptr lhs, const_pointer rhs) noexcept
 		{
 			return lhs.ptr() == rhs;
 		}
 
 		MZ_CONST_INLINE_GETTER
-		friend constexpr bool operator!=(tagged_ptr lhs, const_pointer rhs) noexcept
+		friend bool operator!=(tagged_ptr lhs, const_pointer rhs) noexcept
 		{
 			return lhs.ptr() != rhs;
 		}
 
 		MZ_CONST_INLINE_GETTER
-		friend constexpr bool operator==(const_pointer lhs, tagged_ptr rhs) noexcept
+		friend bool operator==(const_pointer lhs, tagged_ptr rhs) noexcept
 		{
 			return lhs == rhs.ptr();
 		}
 
 		MZ_CONST_INLINE_GETTER
-		friend constexpr bool operator!=(const_pointer lhs, tagged_ptr rhs) noexcept
+		friend bool operator!=(const_pointer lhs, tagged_ptr rhs) noexcept
 		{
 			return lhs != rhs.ptr();
 		}
@@ -1432,6 +1324,9 @@ namespace mz
 	tagged_ptr(T*) -> tagged_ptr<T>;
 
 }
+
+#undef MZ_TAGGED_PTR_TAG_TYPE_CHECKS
+#undef MZ_TAGGED_PTR_TAG_OBJECT_CHECKS
 
 #if MZ_TAGGED_PTR_HAS_TRAITS
 

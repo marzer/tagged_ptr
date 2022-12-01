@@ -69,9 +69,6 @@ struct tagged_ptr_static_checks final
 	template struct tagged_ptr_static_checks<volatile type, min_align>;                                                \
 	template struct tagged_ptr_static_checks<const volatile type, min_align>
 
-#if MZ_ARCH_AMD64
-CHECK_TRAITS(void, 1);
-#endif
 CHECK_TRAITS(void, 2);
 CHECK_TRAITS(void, 4);
 CHECK_TRAITS(void, 8);

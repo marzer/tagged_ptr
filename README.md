@@ -8,6 +8,8 @@ Requires C++17.
 
 ## _"What is a tagged pointer?"_
 
+A special pointer that uses some otherwise-unused bits of its memory representation to stash some extra data without taking up any more space (i.e. it still has `sizeof(void*)`).
+
 From [wikipedia/tagged_pointer](https://en.wikipedia.org/wiki/Tagged_pointer):
 
 > In computer science, a tagged pointer is a pointer (concretely a memory address) with additional data associated with it, such as an indirection bit or reference count. This additional data is often "folded" into the pointer, meaning stored inline in the data representing the address, taking advantage of certain properties of memory addressing.
@@ -17,7 +19,6 @@ From [wikipedia/tagged_pointer](https://en.wikipedia.org/wiki/Tagged_pointer):
 ## Features
 
 -   Familiar `std::unique_ptr`-like interface
--   Fully `constexpr` (modulo compiler support)
 -   Support for storing enums and trivially-copyable structs in the tag data
 -   Lots of static checks and debug assertions to make sure you don't do The Bad™
 
@@ -58,17 +59,17 @@ namespace mz
         // default construct the pointer and tag bits to zero
         constexpr tagged_ptr() noexcept = default;
 
+        // initialize using nullptr
+        constexpr tagged_ptr(nullptr_t) noexcept;
+
         // construct from a pointer, set tag bits to zero
-        explicit constexpr tagged_ptr(pointer value) noexcept;
+        explicit tagged_ptr(pointer value) noexcept;
 
         // construct from a pointer and tag bits
         //
-        // tag_value may be an unsigned integer/enum or a trivially-copyable type small enough
+        // tag_value may be an integer, enum, or trivial object type small enough
         template <typename U>
-        constexpr tagged_ptr(pointer value, const U& tag_value) noexcept;
-
-        // initialize using nullptr
-        constexpr tagged_ptr(nullptr_t) noexcept;
+        tagged_ptr(pointer value, const U& tag_value) noexcept;
 
         // tagged_ptr is trivially-copyable and trivially-destructible
         constexpr tagged_ptr(const tagged_ptr&) noexcept = default;
@@ -80,39 +81,39 @@ namespace mz
         //------------------------------------------
 
         // gets the pointer value
-        constexpr pointer ptr() const noexcept;
+        pointer ptr() const noexcept;
 
         // gets the pointer value (alias for ptr())
-        constexpr pointer get() const noexcept;
+        pointer get() const noexcept;
 
         // gets the pointer value
-        explicit constexpr operator pointer() const noexcept;
+        explicit operator pointer() const noexcept;
 
         // returns a reference to the pointed object
         //
         // this is only available when T is an object type
-        constexpr element_type& operator*() const noexcept;
+        element_type& operator*() const noexcept;
 
         // invokes the -> operator on the pointed object
         //
         // this is only available when T is a class type
-        constexpr pointer operator->() const noexcept;
+        pointer operator->() const noexcept;
 
         //------------------------------------------
         // changing the pointer
         //------------------------------------------
 
         // changes the pointer value without changing the tag bits
-        constexpr tagged_ptr& ptr(pointer value) noexcept;
+        tagged_ptr& ptr(pointer value) noexcept;
 
         // changes the pointer value without changing the tag bits
-        constexpr tagged_ptr& operator=(pointer rhs) noexcept;
+        tagged_ptr& operator=(pointer rhs) noexcept;
 
         // clears the pointer value without changing the tag bits
         constexpr tagged_ptr& clear_ptr() noexcept;
 
         // checks if a raw pointer can be stored without clipping into the tag bits
-        static constexpr bool can_store_ptr(pointer value) noexcept;
+        static bool can_store_ptr(pointer value) noexcept;
 
         //------------------------------------------
         // retrieving the tag bits
@@ -123,10 +124,10 @@ namespace mz
         // U defaults to tag_type, but can be any compatible unsigned integer/enum
         // or trivially-copyable type
         template <typename U = tag_type>
-        constexpr U tag() const noexcept;
+        U tag() const noexcept;
 
         // gets the value of a particular tag bit
-        constexpr bool tag_bit(size_t tag_bit_index) const noexcept;
+        bool tag_bit(size_t tag_bit_index) const noexcept;
 
         //------------------------------------------
         // changing the tag
@@ -136,18 +137,18 @@ namespace mz
         //
         // tag_value may be an unsigned integer/enum or a trivially-copyable type small enough
         template <typename U>
-        constexpr tagged_ptr& tag(const U& tag_value) noexcept;
+        tagged_ptr& tag(const U& tag_value) noexcept;
 
         // sets the value of a particular tag bit
-        constexpr tagged_ptr& tag_bit(size_t tag_bit_index, bool val) noexcept;
+        tagged_ptr& tag_bit(size_t tag_bit_index, bool val) noexcept;
 
         // clears the tag bits
         constexpr tagged_ptr& clear_tag() noexcept;
 
-        // checks if a tag value is has compatible traits (copyable, small enough, etc.)
+        // checks if a tag value has compatible traits (copyable, small enough, etc.)
         // and can be stored without clipping into the pointer bits
         template <typename U>
-        static constexpr bool can_store_tag(const U& tag_value) noexcept;
+        static bool can_store_tag(const U& tag_value) noexcept;
 
         //------------------------------------------
         // reset()
@@ -157,30 +158,30 @@ namespace mz
         constexpr tagged_ptr& reset() noexcept;
 
         // overrides the pointer value and resets the tag bits to zero
-        constexpr tagged_ptr& reset(pointer value) noexcept;
+        tagged_ptr& reset(pointer value) noexcept;
 
         // overrides both the pointer value and the tag bits
         //
         // tag_value may be an unsigned integer/enum or a trivially-copyable type small enough
         template <typename U>
-        constexpr tagged_ptr& reset(pointer value, const U& tag_value) noexcept;
+        tagged_ptr& reset(pointer value, const U& tag_value) noexcept;
 
         //------------------------------------------
         // comparison
         //------------------------------------------
 
         // returns true if the pointer value is non-null (tag bits are ignored)
-        explicit constexpr operator bool() const noexcept;
+        explicit operator bool() const noexcept;
 
         // compares two tagged pointers for exact equality (tag bits are NOT ignored)
         friend constexpr bool operator==(tagged_ptr lhs, tagged_ptr rhs) noexcept;
         friend constexpr bool operator!=(tagged_ptr lhs, tagged_ptr rhs) noexcept;
 
         // compares a tagged pointer with a raw pointer of the same type (tag bits are ignored)
-        friend constexpr bool operator==(tagged_ptr lhs, const_pointer rhs) noexcept;
-        friend constexpr bool operator!=(tagged_ptr lhs, const_pointer rhs) noexcept;
-        friend constexpr bool operator==(const_pointer lhs, tagged_ptr rhs) noexcept;
-        friend constexpr bool operator!=(const_pointer lhs, tagged_ptr rhs) noexcept;
+        friend bool operator==(tagged_ptr lhs, const_pointer rhs) noexcept;
+        friend bool operator!=(tagged_ptr lhs, const_pointer rhs) noexcept;
+        friend bool operator==(const_pointer lhs, tagged_ptr rhs) noexcept;
+        friend bool operator!=(const_pointer lhs, tagged_ptr rhs) noexcept;
 
         //------------------------------------------
         // function pointers
@@ -190,7 +191,7 @@ namespace mz
         //
         // this is only available when T is a function
         template <typename... U>
-        constexpr decltype(auto) operator()(U&&... args) const noexcept(/*...*/);
+        decltype(auto) operator()(U&&... args) const noexcept(/*...*/);
     };
 
     // deduction guides
@@ -222,15 +223,26 @@ There is also support for use as a `meson.build` subproject.
 
 <br>
 
+## Configuration
+
+Macros you can define to customize how mz::tagged_ptr works. `#define` them in your build system or before including the header.
+
+| Define                     | Type           | Description                                                                                  | Default                    |
+| -------------------------- | -------------- | -------------------------------------------------------------------------------------------- | -------------------------- |
+| `MZ_ASSERT()`              | Function macro | Debug assert function.                                                                       | `assert()`                 |
+| `MZ_TAGGED_PTR_BITS`       | Integer        | The number of pointer bits actually used by the environment. <sup>[1](#config-note-1)</sup>  | `sizeof(void*) * CHAR_BIT` |
+| `MZ_TAGGED_PTR_HAS_TRAITS` | Boolean        | Should a specialization of `std::pointer_traits` be included? <sup>[2](#config-note-2)</sup> | `1`                        |
+
+1. <span id="config-note-1">Some platforms will not use the full range of bits in the pointer, leaving some region of high bits essentially unused (e.g. [AMD64] may only use 48 or 57 bits). Defining this will allow `mz::tagged_pointer` to take advantage of these extra bits by shifting them down into the tag section. ⚠&#xFE0F; Very non-portable; use with caution!</span>
+2. <span id="config-note-2">Implies `#include <memory>` - users wishing to keep compile times lower and not needing the pointer traits might wish to set this to `0`.</span>
+
+<br>
+
 ## Caveats
 
 -   ⚠&#xFE0F; So far I've only been able to test this on x86 and AMD64. I welcome help testing it on other platforms! (see [Contributing])
 -   ⚠&#xFE0F; Absolutely no idea if this will work on big-endian systems. Help welcome! (see [Contributing])
 -   ⚠&#xFE0F; Some environments will perform pointer tagging natively (e.g. [Android on Armv8 AArch64](https://source.android.com/docs/security/test/tagged-pointers)); I recommend not using this class in those contexts.
--   ⚠&#xFE0F; A new-ish compiler is necessary for the best diagnostics:
-    -   clang 9 or higher
-    -   gcc 9 or higher
-    -   MSVC 1925 (Visual Studio 2019 16.5) or higher
 
 <br>
 
@@ -258,3 +270,4 @@ MIT. See [LICENSE](LICENSE).
 [gitter]: https://gitter.im/marzer/community
 [sponsor]: https://github.com/sponsors/marzer
 [contributing]: #Contributing
+[amd64]: https://en.wikipedia.org/wiki/X86-64

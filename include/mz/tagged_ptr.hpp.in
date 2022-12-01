@@ -11,7 +11,7 @@
 #define {% macros::prefix %}TAGGED_PTR_HPP
 
 #define {% macros::prefix %}TAGGED_PTR_VERSION_MAJOR 0
-#define {% macros::prefix %}TAGGED_PTR_VERSION_MINOR 1
+#define {% macros::prefix %}TAGGED_PTR_VERSION_MINOR 2
 #define {% macros::prefix %}TAGGED_PTR_VERSION_PATCH 0
 
 //% preprocessor::cpp
@@ -30,16 +30,21 @@
 //% preprocessor::trivial_abi
 //% preprocessor::hidden
 //% preprocessor::sfinae
-//% preprocessor::has_if_consteval
-//% preprocessor::if_consteval
-//% preprocessor::constexpr_safe_assert
 
 #include <climits> // CHAR_BIT
 #include <cstddef> // size_t
 #include <cstring> // std::memcpy
 #include <cstdint>
-#include <cassert>
 #include <type_traits>
+
+#ifndef NDEBUG
+	#ifndef {% macros::prefix %}ASSERT
+		#include <cassert>
+		#define {% macros::prefix %}ASSERT(...) assert(__VA_ARGS__)
+	#endif
+#else
+	#define {% macros::prefix %}ASSERT(...) static_cast<void>(0)
+#endif
 
 #ifndef {% macros::prefix %}TAGGED_PTR_HAS_TRAITS
 	#define {% macros::prefix %}TAGGED_PTR_HAS_TRAITS 1
@@ -55,19 +60,16 @@ namespace {% namespaces::main %}
 
 	//% meta::remove_cvref
 	//% meta::remove_enum		guarded
-	//% meta::is_cvref
-	//% meta::is_integral
-	//% meta::is_unsigned
+	//% meta::is_cvref			guarded
+	//% meta::is_unsigned		guarded
 
 	//% max						guarded
 	//% clamp					guarded
-	//% is_constant_evaluated	guarded
 
 	//% countl_zero_naive 		guarded
 	//% bit_width				guarded
 	//% bit_ceil				guarded
 	//% bit_floor				guarded
-	//% bit_cast				guarded
 	//% bit_fill_right 			guarded
 	//% has_single_bit 			guarded
 	//% assume_aligned 			guarded
