@@ -25,6 +25,7 @@ AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: Yes
 AttributeMacros:
     - MZ_EMPTY_BASES
+    - MZ_NODISCARD_CLASS
 BinPackArguments: false
 BinPackParameters: false
 BraceWrapping:
@@ -94,7 +95,7 @@ IncludeIsMainSourceRegex: ""
 IndentCaseLabels: true
 IndentCaseBlocks: false
 IndentGotoLabels: true
-IndentPPDirectives: None
+IndentPPDirectives: BeforeHash
 IndentExternBlock: Indent
 IndentRequires: false
 IndentWidth: 4
@@ -150,18 +151,19 @@ SpaceBeforeSquareBrackets: false
 BitFieldColonSpacing: Both
 Standard: Latest
 StatementMacros:
-    - MZ_CONST_INLINE_GETTER
-    - MZ_CONST_GETTER
+    - MZ_ALWAYS_INLINE
     - MZ_CONSTRAINED_TEMPLATE
+    - MZ_CONST_GETTER
+    - MZ_CONST_INLINE_GETTER
     - MZ_NODISCARD
     - MZ_NODISCARD_CTOR
-    - MZ_PURE_INLINE_GETTER
     - MZ_PURE_GETTER
+    - MZ_PURE_INLINE_GETTER
 TabWidth: 4
 TypenameMacros:
 UseCRLF: false
 UseTab: Always
 WhitespaceSensitiveMacros:
     - MZ_CONCAT
-    - MZ_FOR_EACH
     - MZ_CONSTRAINED_TEMPLATE
+    - MZ_FOR_EACH

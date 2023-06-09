@@ -6,7 +6,7 @@
 //
 //----------------------------------------------------------------------------------------------------------------------
 //         THIS FILE WAS ASSEMBLED FROM MULTIPLE HEADER FILES BY A SCRIPT - PLEASE DON'T EDIT IT DIRECTLY
-//                              upstream: d6792a3923179acf65591eb8644e5e0bc43da0a7
+//                              upstream: 4d0991fb8dd0c440c0d6c2ab33941ce76ce3c41d
 //----------------------------------------------------------------------------------------------------------------------
 //
 // MIT License
@@ -36,298 +36,300 @@
 #define MZ_TAGGED_PTR_VERSION_PATCH 0
 
 #ifndef MZ_CPP
-#ifdef _MSVC_LANG
-#if _MSVC_LANG > __cplusplus
-#define MZ_CPP _MSVC_LANG
-#endif
-#endif
-#ifndef MZ_CPP
-#define MZ_CPP __cplusplus
-#endif
-#if MZ_CPP >= 202600L
-#undef MZ_CPP
-#define MZ_CPP 26
-#elif MZ_CPP >= 202300L
-#undef MZ_CPP
-#define MZ_CPP 23
-#elif MZ_CPP >= 202002L
-#undef MZ_CPP
-#define MZ_CPP 20
-#elif MZ_CPP >= 201703L
-#undef MZ_CPP
-#define MZ_CPP 17
-#elif MZ_CPP >= 201402L
-#undef MZ_CPP
-#define MZ_CPP 14
-#elif MZ_CPP >= 201103L
-#undef MZ_CPP
-#define MZ_CPP 11
-#else
-#undef MZ_CPP
-#define MZ_CPP 0
-#endif
+	#ifdef _MSVC_LANG
+		#if _MSVC_LANG > __cplusplus
+			#define MZ_CPP _MSVC_LANG
+		#endif
+	#endif
+	#ifndef MZ_CPP
+		#define MZ_CPP __cplusplus
+	#endif
+	#if MZ_CPP >= 202600L
+		#undef MZ_CPP
+		#define MZ_CPP 26
+	#elif MZ_CPP >= 202300L
+		#undef MZ_CPP
+		#define MZ_CPP 23
+	#elif MZ_CPP >= 202002L
+		#undef MZ_CPP
+		#define MZ_CPP 20
+	#elif MZ_CPP >= 201703L
+		#undef MZ_CPP
+		#define MZ_CPP 17
+	#elif MZ_CPP >= 201402L
+		#undef MZ_CPP
+		#define MZ_CPP 14
+	#elif MZ_CPP >= 201103L
+		#undef MZ_CPP
+		#define MZ_CPP 11
+	#else
+		#undef MZ_CPP
+		#define MZ_CPP 0
+	#endif
 #endif
 
 #ifndef MZ_INTELLISENSE
-#ifdef __INTELLISENSE__
-#define MZ_INTELLISENSE 1
-#else
-#define MZ_INTELLISENSE 0
-#endif
+	#ifdef __INTELLISENSE__
+		#define MZ_INTELLISENSE 1
+	#else
+		#define MZ_INTELLISENSE 0
+	#endif
 #endif
 
 #ifndef MZ_DOXYGEN
-#if defined(DOXYGEN) || defined(__DOXYGEN) || defined(__DOXYGEN__) || defined(__doxygen__) || defined(__POXY__)        \
-	|| defined(__poxy__)
-#define MZ_DOXYGEN 1
-#else
-#define MZ_DOXYGEN 0
-#endif
+	#if defined(DOXYGEN) || defined(__DOXYGEN) || defined(__DOXYGEN__) || defined(__doxygen__) || defined(__POXY__)    \
+		|| defined(__poxy__)
+		#define MZ_DOXYGEN 1
+	#else
+		#define MZ_DOXYGEN 0
+	#endif
 #endif
 
 #ifndef MZ_CLANG
-#ifdef __clang__
-#define MZ_CLANG __clang_major__
-#else
-#define MZ_CLANG 0
-#endif
+	#ifdef __clang__
+		#define MZ_CLANG __clang_major__
+	#else
+		#define MZ_CLANG 0
+	#endif
 #endif
 
 #ifndef MZ_ICC
-#ifdef __INTEL_COMPILER
-#define MZ_ICC __INTEL_COMPILER
-#ifdef __ICL
-#define MZ_ICC_CL MZ_ICC
-#else
-#define MZ_ICC_CL 0
-#endif
-#else
-#define MZ_ICC	  0
-#define MZ_ICC_CL 0
-#endif
+	#ifdef __INTEL_COMPILER
+		#define MZ_ICC __INTEL_COMPILER
+		#ifdef __ICL
+			#define MZ_ICC_CL MZ_ICC
+		#else
+			#define MZ_ICC_CL 0
+		#endif
+	#else
+		#define MZ_ICC	  0
+		#define MZ_ICC_CL 0
+	#endif
 #endif
 
 #ifndef MZ_MSVC_LIKE
-#ifdef _MSC_VER
-#define MZ_MSVC_LIKE _MSC_VER
-#else
-#define MZ_MSVC_LIKE 0
-#endif
+	#ifdef _MSC_VER
+		#define MZ_MSVC_LIKE _MSC_VER
+	#else
+		#define MZ_MSVC_LIKE 0
+	#endif
 #endif
 
 #ifndef MZ_MSVC
-#if MZ_MSVC_LIKE && !MZ_CLANG && !MZ_ICC
-#define MZ_MSVC MZ_MSVC_LIKE
-#else
-#define MZ_MSVC 0
-#endif
+	#if MZ_MSVC_LIKE && !MZ_CLANG && !MZ_ICC
+		#define MZ_MSVC MZ_MSVC_LIKE
+	#else
+		#define MZ_MSVC 0
+	#endif
 #endif
 
 #ifndef MZ_GCC_LIKE
-#ifdef __GNUC__
-#define MZ_GCC_LIKE __GNUC__
-#else
-#define MZ_GCC_LIKE 0
-#endif
+	#ifdef __GNUC__
+		#define MZ_GCC_LIKE __GNUC__
+	#else
+		#define MZ_GCC_LIKE 0
+	#endif
 #endif
 
 #ifndef MZ_GCC
-#if MZ_GCC_LIKE && !MZ_CLANG && !MZ_ICC
-#define MZ_GCC MZ_GCC_LIKE
-#else
-#define MZ_GCC 0
-#endif
+	#if MZ_GCC_LIKE && !MZ_CLANG && !MZ_ICC
+		#define MZ_GCC MZ_GCC_LIKE
+	#else
+		#define MZ_GCC 0
+	#endif
 #endif
 
 #ifndef MZ_ARCH_AMD64
-#if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_AMD64)
-#define MZ_ARCH_AMD64	1
-#define MZ_ARCH_BITNESS 64
-#else
-#define MZ_ARCH_AMD64 0
-#endif
+	#if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_AMD64)
+		#define MZ_ARCH_AMD64	1
+		#define MZ_ARCH_BITNESS 64
+	#else
+		#define MZ_ARCH_AMD64 0
+	#endif
 #endif
 
 #ifndef MZ_HAS_BUILTIN
-#ifdef __has_builtin
-#define MZ_HAS_BUILTIN(name) __has_builtin(name)
-#else
-#define MZ_HAS_BUILTIN(name) 0
-#endif
+	#ifdef __has_builtin
+		#define MZ_HAS_BUILTIN(name) __has_builtin(name)
+	#else
+		#define MZ_HAS_BUILTIN(name) 0
+	#endif
 #endif
 
 #ifndef MZ_HAS_CPP_ATTR
-#ifdef __has_cpp_attribute
-#define MZ_HAS_CPP_ATTR(attr) __has_cpp_attribute(attr)
-#else
-#define MZ_HAS_CPP_ATTR(attr) 0
-#endif
+	#ifdef __has_cpp_attribute
+		#define MZ_HAS_CPP_ATTR(attr) __has_cpp_attribute(attr)
+	#else
+		#define MZ_HAS_CPP_ATTR(attr) 0
+	#endif
 #endif
 
 #ifndef MZ_HAS_ATTR
-#ifdef __has_attribute
-#define MZ_HAS_ATTR(attr) __has_attribute(attr)
-#else
-#define MZ_HAS_ATTR(attr) 0
-#endif
+	#ifdef __has_attribute
+		#define MZ_HAS_ATTR(attr) __has_attribute(attr)
+	#else
+		#define MZ_HAS_ATTR(attr) 0
+	#endif
 #endif
 
 #ifndef MZ_ATTR
-#if MZ_CLANG || MZ_GCC_LIKE
-#define MZ_ATTR(...) __attribute__((__VA_ARGS__))
-#else
-#define MZ_ATTR(...)
-#endif
+	#if MZ_CLANG || MZ_GCC_LIKE
+		#define MZ_ATTR(...) __attribute__((__VA_ARGS__))
+	#else
+		#define MZ_ATTR(...)
+	#endif
 #endif
 
 #ifndef MZ_DECLSPEC
-#if MZ_MSVC_LIKE
-#define MZ_DECLSPEC(...) __declspec(__VA_ARGS__)
-#else
-#define MZ_DECLSPEC(...)
-#endif
+	#if MZ_MSVC_LIKE
+		#define MZ_DECLSPEC(...) __declspec(__VA_ARGS__)
+	#else
+		#define MZ_DECLSPEC(...)
+	#endif
 #endif
 
 #ifndef MZ_ALWAYS_INLINE
-#if MZ_MSVC_LIKE
-#define MZ_ALWAYS_INLINE __forceinline
-#elif MZ_CLANG || MZ_GCC_LIKE || MZ_HAS_ATTR(__always_inline__)
-#define MZ_ALWAYS_INLINE                                                                                               \
-	MZ_ATTR(__always_inline__)                                                                                         \
-	inline
-#else
-#define MZ_ALWAYS_INLINE inline
-#endif
+	#if MZ_MSVC_LIKE
+		#define MZ_ALWAYS_INLINE __forceinline
+	#elif MZ_CLANG || MZ_GCC_LIKE || MZ_HAS_ATTR(__always_inline__)
+		#define MZ_ALWAYS_INLINE                                                                                       \
+			MZ_ATTR(__always_inline__)                                                                                 \
+			inline
+	#else
+		#define MZ_ALWAYS_INLINE inline
+	#endif
 #endif
 
 #ifndef MZ_NODISCARD
-#if MZ_HAS_CPP_ATTR(nodiscard) >= 201603
-#define MZ_NODISCARD	   [[nodiscard]]
-#define MZ_NODISCARD_CLASS [[nodiscard]]
-#elif MZ_CLANG || MZ_GCC_LIKE || MZ_HAS_ATTR(warn_unused_result)
-#define MZ_NODISCARD MZ_ATTR(warn_unused_result)
-#else
-#define MZ_NODISCARD
-#endif
-#ifndef MZ_NODISCARD_CLASS
-#define MZ_NODISCARD_CLASS
-#endif
-#if MZ_HAS_CPP_ATTR(nodiscard) >= 201907
-#define MZ_NODISCARD_CTOR [[nodiscard]]
-#else
-#define MZ_NODISCARD_CTOR
-#endif
+	#if MZ_HAS_CPP_ATTR(nodiscard) >= 201603
+		#define MZ_NODISCARD	   [[nodiscard]]
+		#define MZ_NODISCARD_CLASS [[nodiscard]]
+	#elif MZ_CLANG || MZ_GCC_LIKE || MZ_HAS_ATTR(warn_unused_result)
+		#define MZ_NODISCARD MZ_ATTR(warn_unused_result)
+	#else
+		#define MZ_NODISCARD
+	#endif
+	#ifndef MZ_NODISCARD_CLASS
+		#define MZ_NODISCARD_CLASS
+	#endif
+	#if MZ_HAS_CPP_ATTR(nodiscard) >= 201907
+		#define MZ_NODISCARD_CTOR [[nodiscard]]
+	#else
+		#define MZ_NODISCARD_CTOR
+	#endif
 #endif
 
 #if MZ_MSVC_LIKE
-#define MZ_ASSUME(cond) __assume(cond)
+	#define MZ_ASSUME(cond) __assume(cond)
 #elif MZ_ICC || MZ_CLANG || MZ_HAS_BUILTIN(__builtin_assume)
-#define MZ_ASSUME(cond) __builtin_assume(cond)
+	#define MZ_ASSUME(cond) __builtin_assume(cond)
 #else
-#define MZ_ASSUME(cond) static_cast<void>(0)
+	#define MZ_ASSUME(cond) static_cast<void>(0)
 #endif
 
 #ifndef MZ_PURE_GETTER
-#ifdef NDEBUG
-#define MZ_PURE	 MZ_DECLSPEC(noalias) MZ_ATTR(pure)
-#define MZ_CONST MZ_DECLSPEC(noalias) MZ_ATTR(const)
-#define MZ_PURE_GETTER                                                                                                 \
-	MZ_NODISCARD                                                                                                       \
-	MZ_PURE
-#define MZ_CONST_GETTER                                                                                                \
-	MZ_NODISCARD                                                                                                       \
-	MZ_CONST
-#define MZ_PURE_INLINE_GETTER                                                                                          \
-	MZ_NODISCARD                                                                                                       \
-	MZ_ALWAYS_INLINE MZ_PURE
-#define MZ_CONST_INLINE_GETTER                                                                                         \
-	MZ_NODISCARD                                                                                                       \
-	MZ_ALWAYS_INLINE MZ_CONST
-#else
-#define MZ_PURE
-#define MZ_CONST
-#define MZ_PURE_GETTER	MZ_NODISCARD
-#define MZ_CONST_GETTER MZ_NODISCARD
-#define MZ_PURE_INLINE_GETTER                                                                                          \
-	MZ_NODISCARD                                                                                                       \
-	MZ_ALWAYS_INLINE
-#define MZ_CONST_INLINE_GETTER                                                                                         \
-	MZ_NODISCARD                                                                                                       \
-	MZ_ALWAYS_INLINE
-#endif
+	#ifdef NDEBUG
+		#define MZ_PURE	 MZ_DECLSPEC(noalias) MZ_ATTR(pure)
+		#define MZ_CONST MZ_DECLSPEC(noalias) MZ_ATTR(const)
+		#define MZ_PURE_GETTER                                                                                         \
+			MZ_NODISCARD                                                                                               \
+			MZ_PURE
+		#define MZ_CONST_GETTER                                                                                        \
+			MZ_NODISCARD                                                                                               \
+			MZ_CONST
+		#define MZ_PURE_INLINE_GETTER                                                                                  \
+			MZ_NODISCARD                                                                                               \
+			MZ_ALWAYS_INLINE                                                                                           \
+			MZ_PURE
+		#define MZ_CONST_INLINE_GETTER                                                                                 \
+			MZ_NODISCARD                                                                                               \
+			MZ_ALWAYS_INLINE                                                                                           \
+			MZ_CONST
+	#else
+		#define MZ_PURE
+		#define MZ_CONST
+		#define MZ_PURE_GETTER	MZ_NODISCARD
+		#define MZ_CONST_GETTER MZ_NODISCARD
+		#define MZ_PURE_INLINE_GETTER                                                                                  \
+			MZ_NODISCARD                                                                                               \
+			MZ_ALWAYS_INLINE
+		#define MZ_CONST_INLINE_GETTER                                                                                 \
+			MZ_NODISCARD                                                                                               \
+			MZ_ALWAYS_INLINE
+	#endif
 #endif
 
 #ifndef MZ_TRIVIAL_ABI
-#if MZ_CLANG || MZ_HAS_ATTR(__trivial_abi__)
-#define MZ_TRIVIAL_ABI MZ_ATTR(__trivial_abi__)
-#else
-#define MZ_TRIVIAL_ABI
-#endif
+	#if MZ_CLANG || MZ_HAS_ATTR(__trivial_abi__)
+		#define MZ_TRIVIAL_ABI MZ_ATTR(__trivial_abi__)
+	#else
+		#define MZ_TRIVIAL_ABI
+	#endif
 #endif
 
 #ifndef MZ_HIDDEN
-#if MZ_DOXYGEN
-#define MZ_HIDDEN(...)
-#define MZ_HIDDEN_BASE(...)
-#define MZ_DOXYGEN_ONLY(...) __VA_ARGS__
-#define MZ_IF_DOXYGEN(A, B)	 A
-#else
-#define MZ_HIDDEN(...) __VA_ARGS__
-#define MZ_HIDDEN_BASE(...)	: __VA_ARGS__
-#define MZ_DOXYGEN_ONLY(...)
-#define MZ_IF_DOXYGEN(A, B) B
-#endif
+	#if MZ_DOXYGEN
+		#define MZ_HIDDEN(...)
+		#define MZ_HIDDEN_BASE(...)
+		#define MZ_DOXYGEN_ONLY(...) __VA_ARGS__
+		#define MZ_IF_DOXYGEN(A, B)	 A
+	#else
+		#define MZ_HIDDEN(...) __VA_ARGS__
+		#define MZ_HIDDEN_BASE(...)	: __VA_ARGS__
+		#define MZ_DOXYGEN_ONLY(...)
+		#define MZ_IF_DOXYGEN(A, B) B
+	#endif
 #endif
 #define MZ_HIDDEN_PARAM(...) MZ_HIDDEN(MZ_COMMA __VA_ARGS__)
 
 #ifndef MZ_CONCEPTS
-#if defined(__cpp_concepts) && __cpp_concepts >= 201907
-#define MZ_CONCEPTS 1
-#else
-#define MZ_CONCEPTS 0
-#endif
+	#if defined(__cpp_concepts) && __cpp_concepts >= 201907
+		#define MZ_CONCEPTS 1
+	#else
+		#define MZ_CONCEPTS 0
+	#endif
 #endif
 
 #ifndef MZ_REQUIRES
-#if !MZ_DOXYGEN && MZ_CONCEPTS
-#define MZ_REQUIRES(...) requires(__VA_ARGS__)
-#else
-#define MZ_REQUIRES(...)
-#endif
+	#if !MZ_DOXYGEN && MZ_CONCEPTS
+		#define MZ_REQUIRES(...) requires(__VA_ARGS__)
+	#else
+		#define MZ_REQUIRES(...)
+	#endif
 #endif
 
 #ifndef MZ_STD_CONCEPT
-#if !MZ_DOXYGEN && defined(__cpp_lib_concepts) && __cpp_lib_concepts >= 202002
-#define MZ_STD_CONCEPT(...) __VA_ARGS__
-#else
-#define MZ_STD_CONCEPT(...) true
-#endif
+	#if !MZ_DOXYGEN && defined(__cpp_lib_concepts) && __cpp_lib_concepts >= 202002
+		#define MZ_STD_CONCEPT(...) __VA_ARGS__
+	#else
+		#define MZ_STD_CONCEPT(...) true
+	#endif
 #endif
 
 #ifndef MZ_ENABLE_IF
-#if !MZ_DOXYGEN
-#define MZ_ENABLE_IF(...) , typename std::enable_if<(__VA_ARGS__), int>::type = 0
-#else
-#define MZ_ENABLE_IF(...)
-#endif
+	#if !MZ_DOXYGEN
+		#define MZ_ENABLE_IF(...) , typename std::enable_if<(__VA_ARGS__), int>::type = 0
+	#else
+		#define MZ_ENABLE_IF(...)
+	#endif
 #endif
 
 #ifndef MZ_CONSTRAINED_TEMPLATE
-#if !MZ_DOXYGEN
-#define MZ_CONSTRAINED_TEMPLATE(condition, ...)                                                                        \
-	template <__VA_ARGS__ MZ_ENABLE_IF(condition)>                                                                     \
-	MZ_REQUIRES(condition)
-#else
-#define MZ_CONSTRAINED_TEMPLATE(condition, ...) template <__VA_ARGS__>
-#endif
+	#if !MZ_DOXYGEN
+		#define MZ_CONSTRAINED_TEMPLATE(condition, ...)                                                                \
+			template <__VA_ARGS__ MZ_ENABLE_IF(condition)>                                                             \
+			MZ_REQUIRES(condition)
+	#else
+		#define MZ_CONSTRAINED_TEMPLATE(condition, ...) template <__VA_ARGS__>
+	#endif
 #endif
 
 #ifndef MZ_HIDDEN_CONSTRAINT
-#if !MZ_DOXYGEN
-#define MZ_HIDDEN_CONSTRAINT(condition, ...) MZ_CONSTRAINED_TEMPLATE(condition, __VA_ARGS__)
-#else
-#define MZ_HIDDEN_CONSTRAINT(condition, ...)
-#endif
+	#if !MZ_DOXYGEN
+		#define MZ_HIDDEN_CONSTRAINT(condition, ...) MZ_CONSTRAINED_TEMPLATE(condition, __VA_ARGS__)
+	#else
+		#define MZ_HIDDEN_CONSTRAINT(condition, ...)
+	#endif
 #endif
 
 #include <climits> // CHAR_BIT
@@ -337,19 +339,19 @@
 #include <type_traits>
 
 #ifndef NDEBUG
-#ifndef MZ_ASSERT
-#include <cassert>
-#define MZ_ASSERT(...) assert(__VA_ARGS__)
-#endif
+	#ifndef MZ_ASSERT
+		#include <cassert>
+		#define MZ_ASSERT(...) assert(__VA_ARGS__)
+	#endif
 #else
-#define MZ_ASSERT(...) static_cast<void>(0)
+	#define MZ_ASSERT(...) static_cast<void>(0)
 #endif
 
 #ifndef MZ_TAGGED_PTR_HAS_TRAITS
-#define MZ_TAGGED_PTR_HAS_TRAITS 1
+	#define MZ_TAGGED_PTR_HAS_TRAITS 1
 #endif
 #if MZ_TAGGED_PTR_HAS_TRAITS
-#include <memory> // std::pointer_traits
+	#include <memory> // std::pointer_traits
 #endif
 
 namespace mz
@@ -361,7 +363,7 @@ namespace mz
 	using remove_cvref = std::remove_cv_t<std::remove_reference_t<T>>;
 
 #ifndef MZ_HAS_SNIPPET_META_REMOVE_ENUM
-#define MZ_HAS_SNIPPET_META_REMOVE_ENUM
+	#define MZ_HAS_SNIPPET_META_REMOVE_ENUM
 
 	namespace detail
 	{
@@ -407,7 +409,7 @@ namespace mz
 #endif // MZ_HAS_SNIPPET_META_REMOVE_ENUM
 
 #ifndef MZ_HAS_SNIPPET_META_IS_CVREF
-#define MZ_HAS_SNIPPET_META_IS_CVREF
+	#define MZ_HAS_SNIPPET_META_IS_CVREF
 
 	template <typename T>
 	inline constexpr bool is_cvref = std::is_const_v<T> || std::is_volatile_v<T> || std::is_reference_v<T>;
@@ -415,7 +417,7 @@ namespace mz
 #endif // MZ_HAS_SNIPPET_META_IS_CVREF
 
 #ifndef MZ_HAS_SNIPPET_META_IS_UNSIGNED
-#define MZ_HAS_SNIPPET_META_IS_UNSIGNED
+	#define MZ_HAS_SNIPPET_META_IS_UNSIGNED
 
 	template <typename T>
 	inline constexpr bool is_unsigned = std::is_unsigned_v<remove_enum<remove_cvref<T>>>;
@@ -423,7 +425,7 @@ namespace mz
 #endif // MZ_HAS_SNIPPET_META_IS_UNSIGNED
 
 #ifndef MZ_HAS_SNIPPET_MAX
-#define MZ_HAS_SNIPPET_MAX
+	#define MZ_HAS_SNIPPET_MAX
 
 	template <typename T, typename... U>
 	MZ_PURE_GETTER
@@ -446,7 +448,7 @@ namespace mz
 #endif // MZ_HAS_SNIPPET_MAX
 
 #ifndef MZ_HAS_SNIPPET_CLAMP
-#define MZ_HAS_SNIPPET_CLAMP
+	#define MZ_HAS_SNIPPET_CLAMP
 
 	template <typename T>
 	MZ_PURE_GETTER
@@ -458,7 +460,7 @@ namespace mz
 #endif // MZ_HAS_SNIPPET_CLAMP
 
 #ifndef MZ_HAS_SNIPPET_COUNTL_ZERO_NAIVE
-#define MZ_HAS_SNIPPET_COUNTL_ZERO_NAIVE
+	#define MZ_HAS_SNIPPET_COUNTL_ZERO_NAIVE
 
 	MZ_CONSTRAINED_TEMPLATE(is_unsigned<T>, typename T)
 	MZ_CONST_GETTER
@@ -485,7 +487,7 @@ namespace mz
 #endif // MZ_HAS_SNIPPET_COUNTL_ZERO_NAIVE
 
 #ifndef MZ_HAS_SNIPPET_BIT_WIDTH
-#define MZ_HAS_SNIPPET_BIT_WIDTH
+	#define MZ_HAS_SNIPPET_BIT_WIDTH
 
 	MZ_CONSTRAINED_TEMPLATE(is_unsigned<T>, typename T)
 	MZ_CONST_GETTER
@@ -502,7 +504,7 @@ namespace mz
 #endif // MZ_HAS_SNIPPET_BIT_WIDTH
 
 #ifndef MZ_HAS_SNIPPET_BIT_CEIL
-#define MZ_HAS_SNIPPET_BIT_CEIL
+	#define MZ_HAS_SNIPPET_BIT_CEIL
 
 	MZ_CONSTRAINED_TEMPLATE(is_unsigned<T>, typename T)
 	MZ_CONST_GETTER
@@ -524,7 +526,7 @@ namespace mz
 #endif // MZ_HAS_SNIPPET_BIT_CEIL
 
 #ifndef MZ_HAS_SNIPPET_BIT_FLOOR
-#define MZ_HAS_SNIPPET_BIT_FLOOR
+	#define MZ_HAS_SNIPPET_BIT_FLOOR
 
 	MZ_CONSTRAINED_TEMPLATE(is_unsigned<T>, typename T)
 	MZ_CONST_GETTER
@@ -545,7 +547,7 @@ namespace mz
 #endif // MZ_HAS_SNIPPET_BIT_FLOOR
 
 #ifndef MZ_HAS_SNIPPET_BIT_FILL_RIGHT
-#define MZ_HAS_SNIPPET_BIT_FILL_RIGHT
+	#define MZ_HAS_SNIPPET_BIT_FILL_RIGHT
 
 	MZ_CONSTRAINED_TEMPLATE(is_unsigned<T>, typename T)
 	MZ_CONST_GETTER
@@ -568,7 +570,7 @@ namespace mz
 #endif // MZ_HAS_SNIPPET_BIT_FILL_RIGHT
 
 #ifndef MZ_HAS_SNIPPET_HAS_SINGLE_BIT
-#define MZ_HAS_SNIPPET_HAS_SINGLE_BIT
+	#define MZ_HAS_SNIPPET_HAS_SINGLE_BIT
 
 	MZ_CONSTRAINED_TEMPLATE(is_unsigned<T>, typename T)
 	MZ_CONST_GETTER
@@ -587,7 +589,7 @@ namespace mz
 #endif // MZ_HAS_SNIPPET_HAS_SINGLE_BIT
 
 #ifndef MZ_HAS_SNIPPET_ASSUME_ALIGNED
-#define MZ_HAS_SNIPPET_ASSUME_ALIGNED
+	#define MZ_HAS_SNIPPET_ASSUME_ALIGNED
 
 	template <size_t N, typename T>
 	MZ_CONST_INLINE_GETTER
@@ -605,31 +607,31 @@ namespace mz
 		}
 		else
 		{
-#if MZ_CLANG || MZ_GCC || MZ_HAS_BUILTIN(assume_aligned)
+	#if MZ_CLANG || MZ_GCC || MZ_HAS_BUILTIN(assume_aligned)
 
 			return static_cast<T*>(__builtin_assume_aligned(ptr, N));
 
-#elif MZ_MSVC
+	#elif MZ_MSVC
 
 			if constexpr (N < 16384)
 				return static_cast<T*>(__builtin_assume_aligned(ptr, N));
 			else
 				return ptr;
 
-#elif MZ_ICC
+	#elif MZ_ICC
 
 			__assume_aligned(ptr, N);
 			return ptr;
 
-#elif defined(__cpp_lib_assume_aligned)
+	#elif defined(__cpp_lib_assume_aligned)
 
 			return std::assume_aligned<N>(ptr);
 
-#else
+	#else
 
 			return ptr;
 
-#endif
+	#endif
 		}
 	}
 
@@ -638,11 +640,11 @@ namespace mz
 }
 
 #ifndef MZ_TAGGED_PTR_BITS
-#define MZ_TAGGED_PTR_BITS 0 // 0 == "all the bits"
+	#define MZ_TAGGED_PTR_BITS 0 // 0 == "all the bits"
 #endif
 #if MZ_ARCH_AMD64 && MZ_TAGGED_PTR_BITS                                                                                \
 	&& !(MZ_TAGGED_PTR_BITS == 48 || MZ_TAGGED_PTR_BITS == 57 || MZ_TAGGED_PTR_BITS == 64)
-#error MZ_TAGGED_PTR_BITS must be 48, 57 or 64 on AMD64. See: https://en.wikipedia.org/wiki/X86-64
+	#error MZ_TAGGED_PTR_BITS must be 48, 57 or 64 on AMD64. See: https://en.wikipedia.org/wiki/X86-64
 #endif
 
 #define MZ_TAGGED_PTR_TAG_TYPE_CHECKS(Tag)                                                                             \
@@ -655,8 +657,8 @@ namespace mz
 	static_assert((sizeof(Tag) * CHAR_BIT) <= tag_bits, "Tag type must fit in the available tag bits")
 
 #if MZ_MSVC
-#pragma warning(push)
-#pragma warning(disable : 4296) // condition is always false/true
+	#pragma warning(push)
+	#pragma warning(disable : 4296) // condition is always false/true
 #endif
 
 namespace mz::detail
@@ -1101,7 +1103,7 @@ namespace mz::detail
 }
 
 #if MZ_MSVC
-#pragma warning(pop)
+	#pragma warning(pop)
 #endif
 
 namespace mz
@@ -1315,7 +1317,7 @@ namespace mz
 		}
 	};
 
-	tagged_ptr(std::nullptr_t)->tagged_ptr<detail::tptr_nullptr_deduced_tag, 1>;
+	tagged_ptr(std::nullptr_t) -> tagged_ptr<detail::tptr_nullptr_deduced_tag, 1>;
 	template <typename T>
 	tagged_ptr(std::nullptr_t, T) -> tagged_ptr<detail::tptr_nullptr_deduced_tag, 1>;
 	template <typename T, typename U>
