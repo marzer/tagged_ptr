@@ -6,7 +6,6 @@
 //
 //----------------------------------------------------------------------------------------------------------------------
 //         THIS FILE WAS ASSEMBLED FROM MULTIPLE HEADER FILES BY A SCRIPT - PLEASE DON'T EDIT IT DIRECTLY
-//                              upstream: 4d0991fb8dd0c440c0d6c2ab33941ce76ce3c41d
 //----------------------------------------------------------------------------------------------------------------------
 //
 // MIT License
@@ -68,6 +67,10 @@
 	#endif
 #endif
 
+#ifndef MZ_MAKE_VERSION
+	#define MZ_MAKE_VERSION(major, minor, patch) (((major)*10000) + ((minor)*100) + ((patch)))
+#endif
+
 #ifndef MZ_INTELLISENSE
 	#ifdef __INTELLISENSE__
 		#define MZ_INTELLISENSE 1
@@ -90,6 +93,40 @@
 		#define MZ_CLANG __clang_major__
 	#else
 		#define MZ_CLANG 0
+	#endif
+
+	// special handling for apple clang; see:
+	// - https://github.com/marzer/tomlplusplus/issues/189
+	// - https://en.wikipedia.org/wiki/Xcode
+	// -
+	// https://stackoverflow.com/questions/19387043/how-can-i-reliably-detect-the-version-of-clang-at-preprocessing-time
+	#if MZ_CLANG && defined(__apple_build_version__)
+		#undef MZ_CLANG
+		#define MZ_CLANG_VERSION MZ_MAKE_VERSION(__clang_major__, __clang_minor__, __clang_patchlevel__)
+		#if MZ_CLANG_VERSION >= MZ_MAKE_VERSION(15, 0, 0)
+			#define MZ_CLANG 16
+		#elif MZ_CLANG_VERSION >= MZ_MAKE_VERSION(14, 3, 0)
+			#define MZ_CLANG 15
+		#elif MZ_CLANG_VERSION >= MZ_MAKE_VERSION(14, 0, 0)
+			#define MZ_CLANG 14
+		#elif MZ_CLANG_VERSION >= MZ_MAKE_VERSION(13, 1, 6)
+			#define MZ_CLANG 13
+		#elif MZ_CLANG_VERSION >= MZ_MAKE_VERSION(13, 0, 0)
+			#define MZ_CLANG 12
+		#elif MZ_CLANG_VERSION >= MZ_MAKE_VERSION(12, 0, 5)
+			#define MZ_CLANG 11
+		#elif MZ_CLANG_VERSION >= MZ_MAKE_VERSION(12, 0, 0)
+			#define MZ_CLANG 10
+		#elif MZ_CLANG_VERSION >= MZ_MAKE_VERSION(11, 0, 3)
+			#define MZ_CLANG 9
+		#elif MZ_CLANG_VERSION >= MZ_MAKE_VERSION(11, 0, 0)
+			#define MZ_CLANG 8
+		#elif MZ_CLANG_VERSION >= MZ_MAKE_VERSION(10, 0, 1)
+			#define MZ_CLANG 7
+		#else
+			#define MZ_CLANG 6 // not strictly correct but doesn't matter below this
+		#endif
+		#undef MZ_CLANG_VERSION
 	#endif
 #endif
 
@@ -136,6 +173,14 @@
 		#define MZ_GCC MZ_GCC_LIKE
 	#else
 		#define MZ_GCC 0
+	#endif
+#endif
+
+#ifndef MZ_CUDA
+	#if defined(__CUDACC__) || defined(__CUDA_ARCH__) || defined(__CUDA_LIBDEVICE__)
+		#define MZ_CUDA 1
+	#else
+		#define MZ_CUDA 0
 	#endif
 #endif
 
@@ -204,8 +249,8 @@
 	#if MZ_HAS_CPP_ATTR(nodiscard) >= 201603
 		#define MZ_NODISCARD	   [[nodiscard]]
 		#define MZ_NODISCARD_CLASS [[nodiscard]]
-	#elif MZ_CLANG || MZ_GCC_LIKE || MZ_HAS_ATTR(warn_unused_result)
-		#define MZ_NODISCARD MZ_ATTR(warn_unused_result)
+	#elif MZ_CLANG || MZ_GCC_LIKE || MZ_HAS_ATTR(__warn_unused_result__)
+		#define MZ_NODISCARD MZ_ATTR(__warn_unused_result__)
 	#else
 		#define MZ_NODISCARD
 	#endif
@@ -220,11 +265,15 @@
 #endif
 
 #if MZ_MSVC_LIKE
-	#define MZ_ASSUME(cond) __assume(cond)
+	#define MZ_ASSUME(expr) __assume(expr)
 #elif MZ_ICC || MZ_CLANG || MZ_HAS_BUILTIN(__builtin_assume)
-	#define MZ_ASSUME(cond) __builtin_assume(cond)
+	#define MZ_ASSUME(expr) __builtin_assume(expr)
+#elif MZ_HAS_CPP_ATTR(assume) >= 202207
+	#define MZ_ASSUME(expr) [[assume(expr)]]
+#elif MZ_HAS_ATTR(__assume__)
+	#define MZ_ASSUME(expr) __attribute__((__assume__(expr)))
 #else
-	#define MZ_ASSUME(cond) static_cast<void>(0)
+	#define MZ_ASSUME(expr) static_cast<void>(0)
 #endif
 
 #ifndef MZ_PURE_GETTER
