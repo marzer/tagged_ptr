@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 //
 //----------------------------------------------------------------------------------------------------------------------
-//         THIS FILE WAS ASSEMBLED FROM MULTIPLE HEADER FILES BY A SCRIPT - PLEASE DON'T EDIT IT DIRECTLY
+//     !!!!! THIS FILE WAS ASSEMBLED FROM MULTIPLE HEADER FILES BY A SCRIPT - PLEASE DON'T EDIT IT DIRECTLY !!!!!
 //----------------------------------------------------------------------------------------------------------------------
 //
 // MIT License
@@ -357,7 +357,7 @@
 
 #ifndef MZ_ENABLE_IF
 	#if !MZ_DOXYGEN
-		#define MZ_ENABLE_IF(...) , typename std::enable_if<(__VA_ARGS__), int>::type = 0
+		#define MZ_ENABLE_IF(...) , typename std::enable_if<!!(__VA_ARGS__), int>::type = 0
 	#else
 		#define MZ_ENABLE_IF(...)
 	#endif
@@ -366,8 +366,8 @@
 #ifndef MZ_CONSTRAINED_TEMPLATE
 	#if !MZ_DOXYGEN
 		#define MZ_CONSTRAINED_TEMPLATE(condition, ...)                                                                \
-			template <__VA_ARGS__ MZ_ENABLE_IF(condition)>                                                             \
-			MZ_REQUIRES(condition)
+			template <__VA_ARGS__ MZ_ENABLE_IF(!!(condition))>                                                         \
+			MZ_REQUIRES(!!(condition))
 	#else
 		#define MZ_CONSTRAINED_TEMPLATE(condition, ...) template <__VA_ARGS__>
 	#endif
@@ -671,10 +671,6 @@ namespace mz
 
 			__assume_aligned(ptr, N);
 			return ptr;
-
-	#elif defined(__cpp_lib_assume_aligned)
-
-			return std::assume_aligned<N>(ptr);
 
 	#else
 
