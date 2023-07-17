@@ -31,7 +31,7 @@
 #define MZ_TAGGED_PTR_HPP
 
 #define MZ_TAGGED_PTR_VERSION_MAJOR 0
-#define MZ_TAGGED_PTR_VERSION_MINOR 2
+#define MZ_TAGGED_PTR_VERSION_MINOR 3
 #define MZ_TAGGED_PTR_VERSION_PATCH 0
 
 #ifndef MZ_CPP
@@ -43,10 +43,13 @@
 	#ifndef MZ_CPP
 		#define MZ_CPP __cplusplus
 	#endif
-	#if MZ_CPP >= 202600L
+	#if MZ_CPP >= 202900L
+		#undef MZ_CPP
+		#define MZ_CPP 29
+	#elif MZ_CPP >= 202600L
 		#undef MZ_CPP
 		#define MZ_CPP 26
-	#elif MZ_CPP >= 202300L
+	#elif MZ_CPP >= 202302L
 		#undef MZ_CPP
 		#define MZ_CPP 23
 	#elif MZ_CPP >= 202002L
@@ -264,49 +267,40 @@
 	#endif
 #endif
 
-#if MZ_MSVC_LIKE
-	#define MZ_ASSUME(expr) __assume(expr)
-#elif MZ_ICC || MZ_CLANG || MZ_HAS_BUILTIN(__builtin_assume)
-	#define MZ_ASSUME(expr) __builtin_assume(expr)
-#elif MZ_HAS_CPP_ATTR(assume) >= 202207
-	#define MZ_ASSUME(expr) [[assume(expr)]]
-#elif MZ_HAS_ATTR(__assume__)
-	#define MZ_ASSUME(expr) __attribute__((__assume__(expr)))
-#else
-	#define MZ_ASSUME(expr) static_cast<void>(0)
+#ifndef MZ_ASSUME
+	#if MZ_MSVC_LIKE
+		#define MZ_ASSUME(expr) __assume(expr)
+	#elif MZ_ICC || MZ_CLANG || MZ_HAS_BUILTIN(__builtin_assume)
+		#define MZ_ASSUME(expr) __builtin_assume(expr)
+	#elif MZ_HAS_CPP_ATTR(assume) >= 202207
+		#define MZ_ASSUME(expr) [[assume(expr)]]
+	#elif MZ_HAS_ATTR(__assume__)
+		#define MZ_ASSUME(expr) __attribute__((__assume__(expr)))
+	#else
+		#define MZ_ASSUME(expr) static_cast<void>(0)
+	#endif
 #endif
 
+// clang-format off
 #ifndef MZ_PURE_GETTER
+	#define MZ_INLINE_GETTER				MZ_NODISCARD	MZ_ALWAYS_INLINE
 	#ifdef NDEBUG
-		#define MZ_PURE	 MZ_DECLSPEC(noalias) MZ_ATTR(pure)
-		#define MZ_CONST MZ_DECLSPEC(noalias) MZ_ATTR(const)
-		#define MZ_PURE_GETTER                                                                                         \
-			MZ_NODISCARD                                                                                               \
-			MZ_PURE
-		#define MZ_CONST_GETTER                                                                                        \
-			MZ_NODISCARD                                                                                               \
-			MZ_CONST
-		#define MZ_PURE_INLINE_GETTER                                                                                  \
-			MZ_NODISCARD                                                                                               \
-			MZ_ALWAYS_INLINE                                                                                           \
-			MZ_PURE
-		#define MZ_CONST_INLINE_GETTER                                                                                 \
-			MZ_NODISCARD                                                                                               \
-			MZ_ALWAYS_INLINE                                                                                           \
-			MZ_CONST
+		#define MZ_PURE					MZ_DECLSPEC(noalias)	MZ_ATTR(pure)
+		#define MZ_CONST					MZ_DECLSPEC(noalias)	MZ_ATTR(const)
+		#define MZ_PURE_GETTER				MZ_NODISCARD						MZ_PURE
+		#define MZ_CONST_GETTER			MZ_NODISCARD						MZ_CONST
+		#define MZ_PURE_INLINE_GETTER		MZ_NODISCARD	MZ_ALWAYS_INLINE	MZ_PURE
+		#define MZ_CONST_INLINE_GETTER		MZ_NODISCARD	MZ_ALWAYS_INLINE	MZ_CONST
 	#else
 		#define MZ_PURE
 		#define MZ_CONST
-		#define MZ_PURE_GETTER	MZ_NODISCARD
-		#define MZ_CONST_GETTER MZ_NODISCARD
-		#define MZ_PURE_INLINE_GETTER                                                                                  \
-			MZ_NODISCARD                                                                                               \
-			MZ_ALWAYS_INLINE
-		#define MZ_CONST_INLINE_GETTER                                                                                 \
-			MZ_NODISCARD                                                                                               \
-			MZ_ALWAYS_INLINE
+		#define MZ_PURE_GETTER				MZ_NODISCARD
+		#define MZ_CONST_GETTER			MZ_NODISCARD
+		#define MZ_PURE_INLINE_GETTER		MZ_NODISCARD	MZ_ALWAYS_INLINE
+		#define MZ_CONST_INLINE_GETTER		MZ_NODISCARD	MZ_ALWAYS_INLINE
 	#endif
 #endif
+// clang-format on
 
 #ifndef MZ_TRIVIAL_ABI
 	#if MZ_CLANG || MZ_HAS_ATTR(__trivial_abi__)
@@ -656,7 +650,7 @@ namespace mz
 		}
 		else
 		{
-	#if MZ_CLANG || MZ_GCC || MZ_HAS_BUILTIN(assume_aligned)
+	#if MZ_CLANG || MZ_GCC || MZ_HAS_BUILTIN(__builtin_assume_aligned)
 
 			return static_cast<T*>(__builtin_assume_aligned(ptr, N));
 
@@ -1155,7 +1149,7 @@ namespace mz
 {
 	template <typename T, size_t Align = detail::tptr_min_align<T>>
 	class MZ_TRIVIAL_ABI tagged_ptr //
-		MZ_HIDDEN_BASE(public detail::tptr_to_object<T, Align>)
+		: public detail::tptr_to_object<T, Align>
 	{
 	  private:
 		using base = detail::tptr_to_object<T, Align>;

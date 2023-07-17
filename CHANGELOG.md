@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.0
+
+-   fixed incorrect `__builtin_assume_aligned` check
+
+<br>
+
 ## v0.2.0
 
 -   removed `constexpr` where it would be non-portable
