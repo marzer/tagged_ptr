@@ -11,7 +11,7 @@
 #define {% macros::prefix %}TAGGED_PTR_HPP
 
 #define {% macros::prefix %}TAGGED_PTR_VERSION_MAJOR 0
-#define {% macros::prefix %}TAGGED_PTR_VERSION_MINOR 3
+#define {% macros::prefix %}TAGGED_PTR_VERSION_MINOR 4
 #define {% macros::prefix %}TAGGED_PTR_VERSION_PATCH 0
 
 //% preprocessor::cpp
@@ -30,6 +30,9 @@
 //% preprocessor::trivial_abi
 //% preprocessor::hidden
 //% preprocessor::sfinae
+
+//% preprocessor::has_if_consteval
+//% preprocessor::if_consteval
 
 #include <climits> // CHAR_BIT
 #include <cstddef> // size_t
@@ -72,6 +75,7 @@ namespace {% namespaces::main %}
 	//% bit_floor				guarded
 	//% bit_fill_right 			guarded
 	//% has_single_bit 			guarded
+	//% is_constant_evaluated	guarded
 	//% assume_aligned 			guarded
 }
 

@@ -31,7 +31,7 @@
 #define MZ_TAGGED_PTR_HPP
 
 #define MZ_TAGGED_PTR_VERSION_MAJOR 0
-#define MZ_TAGGED_PTR_VERSION_MINOR 3
+#define MZ_TAGGED_PTR_VERSION_MINOR 4
 #define MZ_TAGGED_PTR_VERSION_PATCH 0
 
 #ifndef MZ_CPP
@@ -281,26 +281,47 @@
 	#endif
 #endif
 
-// clang-format off
-#ifndef MZ_PURE_GETTER
-	#define MZ_INLINE_GETTER				MZ_NODISCARD	MZ_ALWAYS_INLINE
+#ifndef MZ_PURE
 	#ifdef NDEBUG
-		#define MZ_PURE					MZ_DECLSPEC(noalias)	MZ_ATTR(pure)
-		#define MZ_CONST					MZ_DECLSPEC(noalias)	MZ_ATTR(const)
-		#define MZ_PURE_GETTER				MZ_NODISCARD						MZ_PURE
-		#define MZ_CONST_GETTER			MZ_NODISCARD						MZ_CONST
-		#define MZ_PURE_INLINE_GETTER		MZ_NODISCARD	MZ_ALWAYS_INLINE	MZ_PURE
-		#define MZ_CONST_INLINE_GETTER		MZ_NODISCARD	MZ_ALWAYS_INLINE	MZ_CONST
+		#define MZ_PURE MZ_DECLSPEC(noalias) MZ_ATTR(pure)
 	#else
 		#define MZ_PURE
-		#define MZ_CONST
-		#define MZ_PURE_GETTER				MZ_NODISCARD
-		#define MZ_CONST_GETTER			MZ_NODISCARD
-		#define MZ_PURE_INLINE_GETTER		MZ_NODISCARD	MZ_ALWAYS_INLINE
-		#define MZ_CONST_INLINE_GETTER		MZ_NODISCARD	MZ_ALWAYS_INLINE
 	#endif
 #endif
-// clang-format on
+#ifndef MZ_CONST
+	#ifdef NDEBUG
+		#define MZ_CONST MZ_DECLSPEC(noalias) MZ_ATTR(const)
+	#else
+		#define MZ_CONST
+	#endif
+#endif
+#ifndef MZ_INLINE_GETTER
+	#define MZ_INLINE_GETTER                                                                                           \
+		MZ_NODISCARD                                                                                                   \
+		MZ_ALWAYS_INLINE
+#endif
+#ifndef MZ_PURE_GETTER
+	#define MZ_PURE_GETTER                                                                                             \
+		MZ_NODISCARD                                                                                                   \
+		MZ_PURE
+#endif
+#ifndef MZ_PURE_INLINE_GETTER
+	#define MZ_PURE_INLINE_GETTER                                                                                      \
+		MZ_NODISCARD                                                                                                   \
+		MZ_ALWAYS_INLINE                                                                                               \
+		MZ_PURE
+#endif
+#ifndef MZ_CONST_GETTER
+	#define MZ_CONST_GETTER                                                                                            \
+		MZ_NODISCARD                                                                                                   \
+		MZ_CONST
+#endif
+#ifndef MZ_CONST_INLINE_GETTER
+	#define MZ_CONST_INLINE_GETTER                                                                                     \
+		MZ_NODISCARD                                                                                                   \
+		MZ_ALWAYS_INLINE                                                                                               \
+		MZ_CONST
+#endif
 
 #ifndef MZ_TRIVIAL_ABI
 	#if MZ_CLANG || MZ_HAS_ATTR(__trivial_abi__)
@@ -351,8 +372,10 @@
 
 #ifndef MZ_ENABLE_IF
 	#if !MZ_DOXYGEN
-		#define MZ_ENABLE_IF(...) , typename std::enable_if<!!(__VA_ARGS__), int>::type = 0
+		#define MZ_ENABLE_IF_T(T, ...) std::enable_if_t<!!(__VA_ARGS__), T>
+		#define MZ_ENABLE_IF(...)	   , MZ_ENABLE_IF_T(int, __VA_ARGS__) = 0
 	#else
+		#define MZ_ENABLE_IF_T(T, ...)
 		#define MZ_ENABLE_IF(...)
 	#endif
 #endif
@@ -372,6 +395,24 @@
 		#define MZ_HIDDEN_CONSTRAINT(condition, ...) MZ_CONSTRAINED_TEMPLATE(condition, __VA_ARGS__)
 	#else
 		#define MZ_HIDDEN_CONSTRAINT(condition, ...)
+	#endif
+#endif
+
+#ifndef MZ_HAS_IF_CONSTEVAL
+	#if defined(__cpp_if_consteval) && __cpp_if_consteval >= 202106
+		#define MZ_HAS_IF_CONSTEVAL 1
+	#else
+		#define MZ_HAS_IF_CONSTEVAL 0
+	#endif
+#endif
+
+#ifndef MZ_IF_CONSTEVAL
+	#if MZ_HAS_IF_CONSTEVAL
+		#define MZ_IF_CONSTEVAL if consteval
+		#define MZ_IF_RUNTIME	if !consteval
+	#else
+		#define MZ_IF_CONSTEVAL if (::mz::is_constant_evaluated())
+		#define MZ_IF_RUNTIME	if (!::mz::is_constant_evaluated())
 	#endif
 #endif
 
@@ -446,6 +487,7 @@ namespace mz
 			using type = std::add_rvalue_reference_t<typename remove_enum_<T>::type>;
 		};
 	}
+
 	template <typename T>
 	using remove_enum = typename detail::remove_enum_<T>::type;
 
@@ -631,6 +673,45 @@ namespace mz
 
 #endif // MZ_HAS_SNIPPET_HAS_SINGLE_BIT
 
+#ifndef MZ_HAS_SNIPPET_IS_CONSTANT_EVALUATED
+	#define MZ_HAS_SNIPPET_IS_CONSTANT_EVALUATED
+
+	MZ_CONST_INLINE_GETTER
+	constexpr bool is_constant_evaluated() noexcept
+	{
+	#if MZ_HAS_IF_CONSTEVAL
+
+		if consteval
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+
+	#elif MZ_CLANG >= 9 || MZ_GCC >= 9 || MZ_MSVC >= 1925 || MZ_HAS_BUILTIN(is_constant_evaluated)
+
+		return __builtin_is_constant_evaluated();
+
+	#elif defined(__cpp_lib_is_constant_evaluated) && __cpp_lib_is_constant_evaluated >= 201811
+
+		return std::is_constant_evaluated();
+
+	#else
+
+		return false;
+
+	#endif
+	}
+
+	namespace build
+	{
+		inline constexpr bool supports_is_constant_evaluated = is_constant_evaluated();
+	}
+
+#endif // MZ_HAS_SNIPPET_IS_CONSTANT_EVALUATED
+
 #ifndef MZ_HAS_SNIPPET_ASSUME_ALIGNED
 	#define MZ_HAS_SNIPPET_ASSUME_ALIGNED
 
@@ -642,35 +723,46 @@ namespace mz
 		static_assert(N > 0 && (N & (N - 1u)) == 0u, "assume_aligned() requires a power-of-two alignment value.");
 		static_assert(!std::is_function_v<T>, "assume_aligned may not be used on functions.");
 
-		MZ_ASSUME((reinterpret_cast<uintptr_t>(ptr) & (N - uintptr_t{ 1 })) == 0);
-
-		if constexpr (std::is_volatile_v<T>)
+		MZ_IF_CONSTEVAL
 		{
-			return static_cast<T*>(mz::assume_aligned<N>(const_cast<std::remove_volatile_t<T>*>(ptr)));
+			return ptr;
 		}
 		else
 		{
+			MZ_ASSUME((reinterpret_cast<uintptr_t>(ptr) & (N - uintptr_t{ 1 })) == 0);
+
+			if constexpr (std::is_volatile_v<T>)
+			{
+				return static_cast<T*>(mz::assume_aligned<N>(const_cast<std::remove_volatile_t<T>*>(ptr)));
+			}
+			else
+			{
 	#if MZ_CLANG || MZ_GCC || MZ_HAS_BUILTIN(__builtin_assume_aligned)
 
-			return static_cast<T*>(__builtin_assume_aligned(ptr, N));
+				return static_cast<T*>(__builtin_assume_aligned(ptr, N));
 
 	#elif MZ_MSVC
 
-			if constexpr (N < 16384)
-				return static_cast<T*>(__builtin_assume_aligned(ptr, N));
-			else
-				return ptr;
+				if constexpr (N < 16384)
+					return static_cast<T*>(__builtin_assume_aligned(ptr, N));
+				else
+					return ptr;
 
 	#elif MZ_ICC
 
-			__assume_aligned(ptr, N);
-			return ptr;
+				__assume_aligned(ptr, N);
+				return ptr;
+
+	#elif defined(__cpp_lib_assume_aligned)
+
+				return std::assume_aligned<N>(ptr);
 
 	#else
 
-			return ptr;
+				return ptr;
 
 	#endif
+			}
 		}
 	}
 
@@ -1238,6 +1330,7 @@ namespace mz
 
 #else
 #endif
+
 		MZ_CONST_INLINE_GETTER
 		static bool can_store_ptr(pointer value) noexcept
 		{
